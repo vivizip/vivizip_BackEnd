@@ -1,4 +1,8 @@
 package com.example.vivizip.common.exception;
 
-public class BaseCode {
+public interface BaseCode {
+    Reason getReason();
+
+    Reason getReasonHttpStatus();
 }
+

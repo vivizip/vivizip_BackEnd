@@ -1,4 +1,5 @@
 package com.example.vivizip.common.exception;
 
-public class BaseErrorCode {
+public interface BaseErrorCode extends BaseCode{
+    String getExplainError() throws NoSuchFieldException;
 }

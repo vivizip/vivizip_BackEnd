@@ -1,4 +1,14 @@
-package com.example.vivizip.common;
+package com.example.vivizip.common.annotation;
 
-public class ExplainError {
+import org.springframework.stereotype.Component;
+
+import java.lang.annotation.*;
+
+@Target({ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Component
+public @interface ExplainError {
+    String value() default "";
 }
+
