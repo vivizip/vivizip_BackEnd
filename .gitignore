@@ -49,3 +49,5 @@ logs/
 .env.local
 *.env
 application.yml
+application-local.yaml
+application-local.yml
