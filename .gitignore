@@ -48,4 +48,3 @@ logs/
 .env
 .env.local
 *.env
-application.yml
