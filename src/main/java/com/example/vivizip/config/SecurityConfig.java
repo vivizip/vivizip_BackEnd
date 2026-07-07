@@ -51,6 +51,7 @@ public class SecurityConfig {
                                 "/v1/api-docs/**",
                                 "/api/v1/test/**",
                                 "/error",
+                                "/ws/**",
                                 "https://vivizip.o-r.kr/swagger-ui/**"
                         ).permitAll()
                         .anyRequest().authenticated())
