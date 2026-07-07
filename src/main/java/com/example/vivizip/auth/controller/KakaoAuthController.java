@@ -1,5 +1,6 @@
 package com.example.vivizip.auth.controller;
 
+import com.example.vivizip.api.common.dto.ApiResponseDto;
 import com.example.vivizip.auth.dto.KakaoLoginRequest;
 import com.example.vivizip.auth.dto.LoginResponse;
 import com.example.vivizip.auth.service.AuthService;
@@ -22,9 +23,9 @@ public class KakaoAuthController {
 
     @Operation(summary = "카카오 소셜 로그인", description = "카카오 SDK에서 발급받은 accessToken으로 로그인 및 서비스 JWT 발급")
     @PostMapping("/login/kakao")
-    public ResponseEntity<LoginResponse> kakaoLogin(@RequestBody @Valid KakaoLoginRequest request) {
+    public ResponseEntity<ApiResponseDto<LoginResponse>> kakaoLogin(@RequestBody @Valid KakaoLoginRequest request) {
         LoginResponse response = authService.loginWithKakao(request.kakaoAccessToken());
         log.info("카카오 로그인 완료: userId={}", response.userId());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponseDto.onSuccess(response));
     }
 }

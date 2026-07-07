@@ -1,5 +1,6 @@
 package com.example.vivizip.user.controller;
 
+import com.example.vivizip.api.common.dto.ApiResponseDto;
 import com.example.vivizip.user.dto.OptionResponse;
 import com.example.vivizip.user.entity.Gender;
 import com.example.vivizip.user.entity.Language;
@@ -25,28 +26,28 @@ public class OptionController {
 
     @Operation(summary = "언어 목록 조회")
     @GetMapping("/languages")
-    public ResponseEntity<List<OptionResponse>> getLanguages() {
+    public ResponseEntity<ApiResponseDto<List<OptionResponse>>> getLanguages() {
         List<OptionResponse> options = Arrays.stream(Language.values())
                 .map(e -> new OptionResponse(e.name(), e.getLabel()))
                 .toList();
-        return ResponseEntity.ok(options);
+        return ResponseEntity.ok(ApiResponseDto.onSuccess(options));
     }
 
     @Operation(summary = "국적 목록 조회")
     @GetMapping("/nationalities")
-    public ResponseEntity<List<OptionResponse>> getNationalities() {
+    public ResponseEntity<ApiResponseDto<List<OptionResponse>>> getNationalities() {
         List<OptionResponse> options = Arrays.stream(Nationality.values())
                 .map(e -> new OptionResponse(e.name(), e.getLabel()))
                 .toList();
-        return ResponseEntity.ok(options);
+        return ResponseEntity.ok(ApiResponseDto.onSuccess(options));
     }
 
     @Operation(summary = "성별 목록 조회")
     @GetMapping("/genders")
-    public ResponseEntity<List<OptionResponse>> getGenders() {
+    public ResponseEntity<ApiResponseDto<List<OptionResponse>>> getGenders() {
         List<OptionResponse> options = Arrays.stream(Gender.values())
                 .map(e -> new OptionResponse(e.name(), e.getLabel()))
                 .toList();
-        return ResponseEntity.ok(options);
+        return ResponseEntity.ok(ApiResponseDto.onSuccess(options));
     }
 }

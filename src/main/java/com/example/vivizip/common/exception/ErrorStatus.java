@@ -58,11 +58,17 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("일회용 인증 코드가 만료되었거나 유효하지 않습니다. 카카오 로그인을 다시 시도해주세요.")
     AUTH_INVALID_AUTH_CODE(UNAUTHORIZED, 4360, "유효하지 않은 인증 코드입니다. 다시 로그인해주세요."),
 
+    // redis (5100~5199)
+    @ExplainError("Redis 서버 연결 실패 또는 데이터 처리 오류입니다.")
+    REDIS_ERROR(INTERNAL_SERVER_ERROR, 5100, "Redis 처리 중 오류가 발생했습니다."),
+
     // member (4050~4099)
     @ExplainError("존재하지 않는 NameType 입니다.")
     MEMBER_NAME_TYPE_IS_INVALID(BAD_REQUEST, 4050, "유효하지 않은 이름 타입입니다."),
     @ExplainError("존재하지 않는 회원입니다.")
-    MEMBER_NOT_FOUND(BAD_REQUEST, 4051, "존재하지 않는 회원입니다.");
+    MEMBER_NOT_FOUND(BAD_REQUEST, 4051, "존재하지 않는 회원입니다."),
+    @ExplainError("탈퇴한 회원입니다.")
+    MEMBER_WITHDRAWN(FORBIDDEN, 4052, "탈퇴한 회원입니다.");
 
 
 
