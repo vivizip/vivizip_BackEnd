@@ -5,6 +5,7 @@ import com.example.vivizip.auth.dto.LoginResponse;
 import com.example.vivizip.auth.kakao.KakaoApiClient;
 import com.example.vivizip.security.jwt.dto.JwtToken;
 import com.example.vivizip.security.jwt.service.TokenService;
+import com.example.vivizip.user.entity.Role;
 import com.example.vivizip.user.entity.User;
 import com.example.vivizip.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -41,14 +41,14 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 3. 신규/기존 유저 처리
-        User user = userRepository.findByKakaoId(kakaoUser.id())
+        User user = userRepository.findByKakaoId(String.valueOf(kakaoUser.id()))
                 .orElseGet(() -> {
                     log.info("신규 유저 등록: kakaoId={}", kakaoUser.id());
                     return userRepository.save(User.builder()
-                            .kakaoId(kakaoUser.id())
+                            .kakaoId(String.valueOf(kakaoUser.id()))
                             .email(kakaoUser.getEmail())
-                            .nickname(kakaoUser.getNickname())
-                            .createdAt(LocalDateTime.now())
+                            .name(kakaoUser.getName())
+                            .role(Role.STUDENT)
                             .build());
                 });
 
@@ -63,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
                 jwtToken.getAccessToken(),
                 jwtToken.getRefreshToken(),
                 user.getId(),
-                user.getNickname()
+                user.getName()
         );
     }
 
