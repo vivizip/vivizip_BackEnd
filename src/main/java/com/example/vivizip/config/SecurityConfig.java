@@ -44,16 +44,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/login/kakao",
-                                "/api/tokens/reissue",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/api/v1/test/**",
-                                "/error"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
-                        .anyRequest().authenticated())
+                        .anyRequest().permitAll()) //TODO: 추후 수정 예정
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler))
