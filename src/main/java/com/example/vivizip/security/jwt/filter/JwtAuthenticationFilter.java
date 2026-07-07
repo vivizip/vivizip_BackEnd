@@ -28,13 +28,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String token = resolveToken(request);
 
+            log.info("[JWT] {} {} | 토큰: {}", request.getMethod(), request.getRequestURI(),
+                    token != null ? "있음" : "없음");
+
             if (token != null && tokenService.validateToken(token)) {
                 Authentication authentication = tokenService.getAuthentication(token);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("JWT 토큰 검증 완료: {}", authentication.getName());
+                log.info("[JWT] 인증 성공 | email: {}", authentication.getName());
             }
         } catch (RuntimeException e) {
-            log.warn("JWT 토큰 처리 중 오류: {}", e.getMessage());
+            log.warn("[JWT] 토큰 처리 실패 | {}", e.getMessage());
             SecurityContextHolder.clearContext();
             throw e;
         }
