@@ -9,21 +9,21 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+@Slf4j
+@Tag(name = "테스트 용 API")
 @RestController
 @RequestMapping("/api/v1/test")
 @RequiredArgsConstructor
-//@Profile("local")
 public class TestApiController {
 
-    private final TokenService tokenService;
-
-    /** 서버 상태 확인 */
+    @DisableSwaggerSecurity // 인증 관련 잠금 없애주는 annotation
     @GetMapping("/health-check")
-    public ResponseEntity<String> healthCheck() {
-        return ResponseEntity.ok("OK");
+    public ApiResponseDto<String> healthCheckup() {
+        return ApiResponseDto.onSuccess(HttpStatus.OK.toString());
     }
 
     /**
@@ -38,3 +38,5 @@ public class TestApiController {
         return ResponseEntity.ok(tokenService.generateToken(authentication));
     }
 }
+
+
