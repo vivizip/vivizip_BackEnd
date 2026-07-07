@@ -50,8 +50,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v1/api-docs/**",
                                 "/api/v1/test/**",
-                                "/error",
-                                "https://vivizip.o-r.kr/swagger-ui/**"
+                                "/error"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
