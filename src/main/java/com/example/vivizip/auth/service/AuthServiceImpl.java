@@ -3,6 +3,8 @@ package com.example.vivizip.auth.service;
 import com.example.vivizip.auth.dto.KakaoUserResponse;
 import com.example.vivizip.auth.dto.LoginResponse;
 import com.example.vivizip.auth.kakao.KakaoApiClient;
+import com.example.vivizip.common.exception.ErrorStatus;
+import com.example.vivizip.common.exception.GeneralException;
 import com.example.vivizip.security.jwt.dto.JwtToken;
 import com.example.vivizip.security.jwt.service.TokenService;
 import com.example.vivizip.user.entity.Role;
@@ -37,7 +39,7 @@ public class AuthServiceImpl implements AuthService {
         // 2. 이메일을 subject로 사용
         String subject = kakaoUser.getEmail();
         if (subject == null) {
-            throw new RuntimeException("카카오 계정에 이메일이 없습니다. 이메일 동의가 필요합니다.");
+            throw new GeneralException(ErrorStatus.AUTH_OAUTH2_EMAIL_NOT_FOUND_FROM_PROVIDER);
         }
 
         // 3. 신규/기존 유저 처리
