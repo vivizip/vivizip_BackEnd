@@ -50,7 +50,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.MEMBER_NOT_FOUND));
         if (user.getStatus() == UserStatus.WITHDRAWN) {
-            throw new GeneralException(ErrorStatus._FORBIDDEN);
+            throw new GeneralException(ErrorStatus.MEMBER_WITHDRAWN);
         }
         return user;
     }
