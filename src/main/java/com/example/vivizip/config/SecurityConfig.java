@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -48,11 +48,11 @@ public class SecurityConfig {
                                 "/api/auth/login/kakao",
                                 "/api/tokens/reissue",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**",
+                                "/v1/api-docs/**",
                                 "/api/v1/test/**",
-                                "/error"
+                                "/error",
+                                "https://vivizip.o-r.kr/swagger-ui/**"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
