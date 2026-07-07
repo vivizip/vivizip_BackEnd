@@ -1,9 +1,14 @@
 package com.example.vivizip.api.common.controller;
 
+import com.example.vivizip.api.common.dto.ApiResponseDto;
+import com.example.vivizip.common.annotation.DisableSwaggerSecurity;
 import com.example.vivizip.security.jwt.dto.JwtToken;
 import com.example.vivizip.security.jwt.service.TokenService;
+import com.example.vivizip.user.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,6 +24,8 @@ import java.util.List;
 @RequestMapping("/api/v1/test")
 @RequiredArgsConstructor
 public class TestApiController {
+
+    private final TokenService tokenService;
 
     @DisableSwaggerSecurity // 인증 관련 잠금 없애주는 annotation
     @GetMapping("/health-check")
