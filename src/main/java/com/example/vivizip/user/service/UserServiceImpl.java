@@ -1,7 +1,7 @@
 package com.example.vivizip.user.service;
 
-import com.example.vivizip.common.exception.ErrorStatus;
-import com.example.vivizip.common.exception.GeneralException;
+import com.example.vivizip.common.exception.member.MemberNotFoundException;
+import com.example.vivizip.common.exception.member.MemberWithdrawnException;
 import com.example.vivizip.user.dto.UpdateLanguageRequest;
 import com.example.vivizip.user.dto.UpdateProfileRequest;
 import com.example.vivizip.user.dto.UserProfileResponse;
@@ -48,9 +48,9 @@ public class UserServiceImpl implements UserService {
 
     private User findActiveUser(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new GeneralException(ErrorStatus.MEMBER_NOT_FOUND));
+                .orElseThrow(MemberNotFoundException::new);
         if (user.getStatus() == UserStatus.WITHDRAWN) {
-            throw new GeneralException(ErrorStatus.MEMBER_WITHDRAWN);
+            throw new MemberWithdrawnException();
         }
         return user;
     }

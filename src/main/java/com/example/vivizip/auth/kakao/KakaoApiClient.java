@@ -1,8 +1,8 @@
 package com.example.vivizip.auth.kakao;
 
 import com.example.vivizip.auth.dto.KakaoUserResponse;
-import com.example.vivizip.common.exception.ErrorStatus;
-import com.example.vivizip.common.exception.GeneralException;
+import com.example.vivizip.common.exception.InternalServerException;
+import com.example.vivizip.common.exception.auth.InvalidKakaoTokenException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -33,10 +33,10 @@ public class KakaoApiClient {
             return response;
         } catch (HttpClientErrorException e) {
             log.error("[Kakao] 인증 실패: status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new GeneralException(ErrorStatus.AUTH_INVALID_AUTH_CODE);
+            throw new InvalidKakaoTokenException();
         } catch (RestClientException e) {
             log.error("[Kakao] API 호출 오류: {}", e.getMessage());
-            throw new GeneralException(ErrorStatus._INTERNAL_SERVER_ERROR);
+            throw new InternalServerException();
         }
     }
 }

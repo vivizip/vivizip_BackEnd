@@ -3,8 +3,7 @@ package com.example.vivizip.auth.service;
 import com.example.vivizip.auth.dto.KakaoUserResponse;
 import com.example.vivizip.auth.dto.LoginResponse;
 import com.example.vivizip.auth.kakao.KakaoApiClient;
-import com.example.vivizip.common.exception.ErrorStatus;
-import com.example.vivizip.common.exception.GeneralException;
+import com.example.vivizip.common.exception.auth.KakaoEmailNotFoundException;
 import com.example.vivizip.security.jwt.dto.JwtToken;
 import com.example.vivizip.security.jwt.service.TokenService;
 import com.example.vivizip.user.entity.Role;
@@ -42,7 +41,7 @@ public class AuthServiceImpl implements AuthService {
         String subject = kakaoUser.getEmail();
         log.info("[Auth] 이메일: {}", subject != null ? subject : "없음");
         if (subject == null) {
-            throw new GeneralException(ErrorStatus.AUTH_OAUTH2_EMAIL_NOT_FOUND_FROM_PROVIDER);
+            throw new KakaoEmailNotFoundException();
         }
 
         // 3. 신규/기존 유저 처리

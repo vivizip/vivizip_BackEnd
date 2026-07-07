@@ -1,8 +1,11 @@
 package com.example.vivizip.security.jwt.service;
 
 import com.example.vivizip.auth.service.RedisService;
-import com.example.vivizip.common.exception.ErrorStatus;
-import com.example.vivizip.common.exception.GeneralException;
+import com.example.vivizip.common.exception.auth.ExpiredTokenException;
+import com.example.vivizip.common.exception.auth.InvalidTokenException;
+import com.example.vivizip.common.exception.auth.NullTokenException;
+import com.example.vivizip.common.exception.auth.RefreshTokenNotFoundException;
+import com.example.vivizip.common.exception.auth.UnsupportedTokenException;
 import com.example.vivizip.security.jwt.dto.JwtToken;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -74,7 +77,7 @@ public class TokenServiceImpl implements TokenService {
     @Override
     public JwtToken issueTokens(String refreshToken) {
         if (!existsRefreshToken(refreshToken)) {
-            throw new GeneralException(ErrorStatus.AUTH_REFRESH_TOKEN_NOT_FOUND);
+            throw new RefreshTokenNotFoundException();
         }
         validateToken(refreshToken);
 
@@ -95,7 +98,7 @@ public class TokenServiceImpl implements TokenService {
         Claims claims = parseClaims(accessToken);
 
         if (claims.get("auth") == null) {
-            throw new GeneralException(ErrorStatus.AUTH_INVALID_TOKEN);
+            throw new InvalidTokenException();
         }
 
         Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
@@ -113,16 +116,16 @@ public class TokenServiceImpl implements TokenService {
             return true;
         } catch (SecurityException | MalformedJwtException e) {
             log.warn("Invalid JWT Token: {}", e.getMessage());
-            throw new GeneralException(ErrorStatus.AUTH_INVALID_TOKEN);
+            throw new InvalidTokenException();
         } catch (ExpiredJwtException e) {
             log.warn("Expired JWT Token: {}", e.getMessage());
-            throw new GeneralException(ErrorStatus.AUTH_TOKEN_HAS_EXPIRED);
+            throw new ExpiredTokenException();
         } catch (UnsupportedJwtException e) {
             log.warn("Unsupported JWT Token: {}", e.getMessage());
-            throw new GeneralException(ErrorStatus.AUTH_TOKEN_IS_UNSUPPORTED);
+            throw new UnsupportedTokenException();
         } catch (IllegalArgumentException e) {
             log.warn("JWT claims string is empty: {}", e.getMessage());
-            throw new GeneralException(ErrorStatus.AUTH_IS_NULL);
+            throw new NullTokenException();
         }
     }
 

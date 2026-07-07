@@ -1,5 +1,6 @@
 package com.example.vivizip.auth.service;
 
+import com.example.vivizip.common.exception.RedisException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -27,7 +28,7 @@ public class RedisService {
             log.debug("Redis 저장 완료: {}", key);
         } catch (Exception e) {
             log.error("Redis 저장 실패: {}", e.getMessage());
-            throw new RuntimeException("Redis 저장 실패: " + e.getMessage());
+            throw new RedisException();
         }
     }
 
@@ -41,7 +42,7 @@ public class RedisService {
             return value;
         } catch (Exception e) {
             log.error("Redis 조회 실패: {}", e.getMessage());
-            throw new RuntimeException("Redis 조회 실패: " + e.getMessage());
+            throw new RedisException();
         }
     }
 
@@ -56,7 +57,7 @@ public class RedisService {
             }
         } catch (Exception e) {
             log.error("Redis 삭제 실패: {}", e.getMessage());
-            throw new RuntimeException("Redis 삭제 실패: " + e.getMessage());
+            throw new RedisException();
         }
     }
 
