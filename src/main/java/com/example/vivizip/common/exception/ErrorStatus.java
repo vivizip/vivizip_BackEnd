@@ -62,7 +62,9 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("존재하지 않는 NameType 입니다.")
     MEMBER_NAME_TYPE_IS_INVALID(BAD_REQUEST, 4050, "유효하지 않은 이름 타입입니다."),
     @ExplainError("존재하지 않는 회원입니다.")
-    MEMBER_NOT_FOUND(BAD_REQUEST, 4051, "존재하지 않는 회원입니다.");
+    MEMBER_NOT_FOUND(BAD_REQUEST, 4051, "존재하지 않는 회원입니다."),
+    @ExplainError("탈퇴한 회원입니다.")
+    MEMBER_WITHDRAWN(FORBIDDEN, 4052, "탈퇴한 회원입니다.");
 
 
 

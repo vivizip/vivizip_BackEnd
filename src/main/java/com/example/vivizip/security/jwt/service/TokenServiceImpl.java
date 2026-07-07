@@ -1,6 +1,8 @@
 package com.example.vivizip.security.jwt.service;
 
 import com.example.vivizip.auth.service.RedisService;
+import com.example.vivizip.common.exception.ErrorStatus;
+import com.example.vivizip.common.exception.GeneralException;
 import com.example.vivizip.security.jwt.dto.JwtToken;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -71,9 +73,10 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public JwtToken issueTokens(String refreshToken) {
-        if (!validateToken(refreshToken) || !existsRefreshToken(refreshToken)) {
-            throw new RuntimeException("유효하지 않은 Refresh Token입니다.");
+        if (!existsRefreshToken(refreshToken)) {
+            throw new GeneralException(ErrorStatus.AUTH_REFRESH_TOKEN_NOT_FOUND);
         }
+        validateToken(refreshToken);
 
         redisService.deleteValue(refreshToken);
 
@@ -92,7 +95,7 @@ public class TokenServiceImpl implements TokenService {
         Claims claims = parseClaims(accessToken);
 
         if (claims.get("auth") == null) {
-            throw new RuntimeException("권한 정보가 없는 토큰입니다.");
+            throw new GeneralException(ErrorStatus.AUTH_INVALID_TOKEN);
         }
 
         Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
@@ -110,16 +113,16 @@ public class TokenServiceImpl implements TokenService {
             return true;
         } catch (SecurityException | MalformedJwtException e) {
             log.warn("Invalid JWT Token: {}", e.getMessage());
-            throw new RuntimeException("유효하지 않은 토큰입니다.");
+            throw new GeneralException(ErrorStatus.AUTH_INVALID_TOKEN);
         } catch (ExpiredJwtException e) {
             log.warn("Expired JWT Token: {}", e.getMessage());
-            throw new RuntimeException("만료된 토큰입니다.");
+            throw new GeneralException(ErrorStatus.AUTH_TOKEN_HAS_EXPIRED);
         } catch (UnsupportedJwtException e) {
             log.warn("Unsupported JWT Token: {}", e.getMessage());
-            throw new RuntimeException("지원하지 않는 토큰입니다.");
+            throw new GeneralException(ErrorStatus.AUTH_TOKEN_IS_UNSUPPORTED);
         } catch (IllegalArgumentException e) {
             log.warn("JWT claims string is empty: {}", e.getMessage());
-            throw new RuntimeException("토큰이 비어있습니다.");
+            throw new GeneralException(ErrorStatus.AUTH_IS_NULL);
         }
     }
 
