@@ -17,7 +17,7 @@ public record KakaoUserResponse(
     }
 
     public record Profile(
-            String nickname,
+            String name,
 
             @JsonProperty("profile_image_url")
             String profileImageUrl
@@ -25,7 +25,7 @@ public record KakaoUserResponse(
     }
 
     public record Properties(
-            String nickname
+            String name
     ) {
     }
 
@@ -34,13 +34,13 @@ public record KakaoUserResponse(
         return kakaoAccount.email();
     }
 
-    public String getNickname() {
+    public String getName() {
         if (kakaoAccount != null && kakaoAccount.profile() != null) {
-            return kakaoAccount.profile().nickname();
+            return kakaoAccount.profile().name();
         }
 
         if (properties != null) {
-            return properties.nickname();
+            return properties.name();
         }
 
         return "카카오사용자";
