@@ -4,6 +4,7 @@ import com.example.vivizip.api.common.dto.ApiResponseDto;
 import com.example.vivizip.common.annotation.DisableSwaggerSecurity;
 import com.example.vivizip.security.jwt.dto.JwtToken;
 import com.example.vivizip.security.jwt.service.TokenService;
+import com.example.vivizip.user.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;

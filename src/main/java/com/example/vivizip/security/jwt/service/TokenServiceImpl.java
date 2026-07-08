@@ -4,6 +4,7 @@ import com.example.vivizip.auth.service.RedisService;
 import com.example.vivizip.common.exception.ErrorStatus;
 import com.example.vivizip.common.exception.GeneralException;
 import com.example.vivizip.security.jwt.dto.JwtToken;
+import com.example.vivizip.security.user.CustomUserDetailsService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -11,13 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -27,12 +25,15 @@ public class TokenServiceImpl implements TokenService {
 
     private final Key key;
     private final RedisService redisService;
+    private final CustomUserDetailsService customUserDetailsService;
 
     public TokenServiceImpl(@Value("${app.jwt.secret}") String keyString,
-                            RedisService redisService) {
+                            RedisService redisService,
+                            CustomUserDetailsService customUserDetailsService) {
         byte[] keyBytes = Decoders.BASE64.decode(keyString);
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.redisService = redisService;
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     @Override
@@ -82,8 +83,9 @@ public class TokenServiceImpl implements TokenService {
 
         Claims claims = parseClaims(refreshToken);
         String username = claims.getSubject();
+        var userDetails = customUserDetailsService.loadUserByUsername(username);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                username, "", Arrays.asList(new SimpleGrantedAuthority("ROLE_USER")));
+                userDetails, "", userDetails.getAuthorities());
 
         JwtToken newTokens = generateToken(authentication);
         log.info("토큰 재발급 완료: {}", username);
@@ -98,12 +100,10 @@ public class TokenServiceImpl implements TokenService {
             throw new GeneralException(ErrorStatus.AUTH_INVALID_TOKEN);
         }
 
-        Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
-                .filter(auth -> !auth.isBlank())
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
-
-        return new UsernamePasswordAuthenticationToken(claims.getSubject(), "", authorities);
+        // DB에서 유저 정보를 로드해 CustomUserDetails를 principal로 사용
+        // → 컨트롤러에서 @AuthenticationPrincipal CustomUserDetails 로 바로 꺼낼 수 있음
+        var userDetails = customUserDetailsService.loadUserByUsername(claims.getSubject());
+        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
     @Override
