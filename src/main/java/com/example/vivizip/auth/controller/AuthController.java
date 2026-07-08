@@ -2,6 +2,7 @@ package com.example.vivizip.auth.controller;
 
 import com.example.vivizip.auth.dto.TokenRequest;
 import com.example.vivizip.auth.service.AuthService;
+import com.example.vivizip.common.annotation.DisableSwaggerSecurity;
 import com.example.vivizip.security.jwt.dto.JwtToken;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +21,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @DisableSwaggerSecurity
     @Operation(summary = "토큰 재발급", description = "refreshToken으로 accessToken + refreshToken 재발급 (토큰 로테이션)")
     @PostMapping("/reissue")
     public ResponseEntity<JwtToken> reissueToken(@RequestBody @Valid TokenRequest request) {

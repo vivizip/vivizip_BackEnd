@@ -2,7 +2,21 @@ package com.example.vivizip.chat.repository;
 
 import com.example.vivizip.chat.entity.ChatMessage;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import org.springframework.data.domain.Pageable;
+import java.util.List;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
-    // 페이징 조회는 다음 단계(REST)에서 추가
+
+    // 최초 조회: 최신 메시지부터
+    @Query("SELECT m FROM ChatMessage m WHERE m.roomId = :roomId ORDER BY m.id DESC")
+    List<ChatMessage> findRecentByRoomId(@Param("roomId") Long roomId, Pageable pageable);
+
+    // 커서 이후(더 과거) 조회: cursor보다 id가 작은 것
+    @Query("SELECT m FROM ChatMessage m WHERE m.roomId = :roomId AND m.id < :cursor ORDER BY m.id DESC")
+    List<ChatMessage> findByRoomIdBeforeCursor(@Param("roomId") Long roomId,
+                                               @Param("cursor") Long cursor,
+                                               Pageable pageable);
 }
