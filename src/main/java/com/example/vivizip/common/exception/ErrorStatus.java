@@ -64,7 +64,19 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("존재하지 않는 회원입니다.")
     MEMBER_NOT_FOUND(BAD_REQUEST, 4051, "존재하지 않는 회원입니다."),
     @ExplainError("탈퇴한 회원입니다.")
-    MEMBER_WITHDRAWN(FORBIDDEN, 4052, "탈퇴한 회원입니다.");
+    MEMBER_WITHDRAWN(FORBIDDEN, 4052, "탈퇴한 회원입니다."),
+    @ExplainError("존재하지 않는 유저입니다.")
+    USER_NOT_FOUND(BAD_REQUEST, 4053, "존재하지 않는 유저입니다."),
+
+    // chat (4400~4449)
+    @ExplainError("자기 자신과는 채팅방을 생성할 수 없습니다.")
+    CHAT_SELF_NOT_ALLOWED(BAD_REQUEST, 4400, "자기 자신과는 채팅할 수 없습니다."),
+    @ExplainError("같은 역할(Role)끼리는 채팅방을 생성할 수 없습니다.")
+    CHAT_SAME_ROLE_NOT_ALLOWED(BAD_REQUEST, 4401, "같은 역할끼리는 채팅할 수 없습니다."),
+    @ExplainError("존재하지 않는 채팅방입니다.")
+    CHAT_ROOM_NOT_FOUND(BAD_REQUEST, 4402, "존재하지 않는 채팅방입니다."),
+    @ExplainError("해당 채팅방에 접근 권한이 없습니다.")
+    CHAT_ACCESS_DENIED(FORBIDDEN, 4403, "채팅방에 접근 권한이 없습니다.");
 
 
 
