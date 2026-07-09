@@ -27,7 +27,7 @@ public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
 
-    @Operation(summary = "채팅방 생성 또는 조회", description = "대상 유저(targetId)와의 채팅방을 생성하거나, 이미 존재하면 기존 채팅방을 반환합니다. SUPPORTER ↔ STUDENT 간에만 가능합니다.")
+    @Operation(summary = "[테스트용 / 실제로는 매칭되면 자동으로 생성] 채팅방 생성 또는 조회", description = "대상 유저(targetId)와의 채팅방을 생성하거나, 이미 존재하면 기존 채팅방을 반환합니다. SUPPORTER ↔ STUDENT 간에만 가능합니다.")
     @PostMapping("/rooms")
     public ChatRoomResponse createRoom(
             @AuthenticationPrincipal CustomUserDetails user,
