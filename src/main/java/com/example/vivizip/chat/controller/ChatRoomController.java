@@ -1,5 +1,6 @@
 package com.example.vivizip.chat.controller;
 
+import com.example.vivizip.chat.dto.ChatMessageResponse;
 import com.example.vivizip.chat.dto.ChatMessageSliceResponse;
 import com.example.vivizip.chat.dto.ChatRoomCreateRequest;
 import com.example.vivizip.chat.dto.ChatRoomResponse;
@@ -7,10 +8,14 @@ import com.example.vivizip.chat.service.ChatRoomService;
 import com.example.vivizip.security.user.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -45,5 +50,22 @@ public class ChatRoomController {
             @Parameter(description = "마지막으로 받은 메시지 ID (첫 요청 시 생략)") @RequestParam(required = false) Long cursor,
             @Parameter(description = "한 번에 조회할 메시지 수 (기본값: 20)") @RequestParam(defaultValue = "20") int size) {
         return chatRoomService.getMessages(user.getUserId(), roomId, cursor, size);
+    }
+
+    @Operation(
+            summary = "채팅 이미지 전송",
+            description = "이미지를 S3에 업로드하고, 해당 URL을 채팅 메시지(type=IMAGE)로 저장 후 채팅방 구독자에게 실시간 브로드캐스트합니다.\n\n" +
+                    "- 허용 형식: JPEG, PNG, WEBP\n" +
+                    "- 최대 크기: 10MB\n" +
+                    "- form-data key: `file`\n" +
+                    "- 응답의 `content` 필드가 S3 이미지 URL입니다.",
+            requestBody = @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
+    )
+    @PostMapping(value = "/rooms/{roomId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ChatMessageResponse uploadImage(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "채팅방 ID") @PathVariable Long roomId,
+            @RequestPart("file") MultipartFile file) {
+        return chatRoomService.uploadImage(user.getUserId(), roomId, file);
     }
 }

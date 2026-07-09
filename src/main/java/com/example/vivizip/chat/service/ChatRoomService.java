@@ -1,10 +1,12 @@
 package com.example.vivizip.chat.service;
 
+import com.example.vivizip.S3.service.S3Service;
 import com.example.vivizip.chat.dto.ChatMessageResponse;
 import com.example.vivizip.chat.dto.ChatMessageSliceResponse;
 import com.example.vivizip.chat.dto.ChatRoomResponse;
 import com.example.vivizip.chat.entity.ChatMessage;
 import com.example.vivizip.chat.entity.ChatRoom;
+import com.example.vivizip.chat.enums.MessageType;
 import com.example.vivizip.chat.repository.ChatMessageRepository;
 import com.example.vivizip.chat.repository.ChatRoomRepository;
 import com.example.vivizip.common.exception.ErrorStatus;
@@ -14,8 +16,10 @@ import com.example.vivizip.user.entity.User;
 import com.example.vivizip.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +32,8 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
+    private final S3Service s3Service;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // 방 생성 or 기존 방 반환 (role 검증 포함)
     @Transactional
@@ -94,5 +100,26 @@ public class ChatRoomService {
         Long nextCursor = found.isEmpty() ? null : found.get(found.size() - 1).getId();
 
         return new ChatMessageSliceResponse(messages, nextCursor, hasNext);
+    }
+
+    // 채팅 이미지 업로드 → S3 저장 후 WebSocket 브로드캐스트
+    @Transactional
+    public ChatMessageResponse uploadImage(Long userId, Long roomId, MultipartFile file) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.CHAT_ROOM_NOT_FOUND));
+
+        if (!room.hasParticipant(userId)) {
+            throw new GeneralException(ErrorStatus.CHAT_ACCESS_DENIED);
+        }
+
+        String imageUrl = s3Service.uploadPublic(file, "chat");
+
+        ChatMessage saved = chatMessageRepository.save(
+                ChatMessage.of(roomId, userId, imageUrl, MessageType.IMAGE)
+        );
+
+        ChatMessageResponse response = ChatMessageResponse.from(saved);
+        messagingTemplate.convertAndSend("/sub/chat/" + roomId, response);
+        return response;
     }
 }
