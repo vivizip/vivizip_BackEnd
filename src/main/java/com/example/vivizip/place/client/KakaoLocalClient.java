@@ -34,7 +34,7 @@ public class KakaoLocalClient {
                                 .queryParam("page", page)
                                 .queryParam("size", size)
                                 .queryParam("sort", sort);
-                        if (x != null && y != null) {   // 좌표 있을 때만 (distance 계산용)
+                        if (x != null && y != null) {
                             uriBuilder.queryParam("x", x).queryParam("y", y);
                         }
                         return uriBuilder.build();
@@ -42,17 +42,27 @@ public class KakaoLocalClient {
                     .retrieve()
                     .body(KakaoPlaceSearchResponse.class);
 
-            log.info("[KakaoLocal] 장소 검색 성공: count={}",
-                    response != null ? response.documents().size() : 0);
+            validateResponse(response, query);
+
+            log.info("[KakaoLocal] 장소 검색 성공: count={}", response.documents().size());
             return response;
 
         } catch (HttpClientErrorException e) {
             log.error("[KakaoLocal] 요청 실패: status={}, body={}",
                     e.getStatusCode(), e.getResponseBodyAsString());
-            throw new GeneralException(ErrorStatus.KAKAO_PLACE_SEARCH_FAILED);
+            throw new GeneralException(ErrorStatus.KAKAO_PLACE_SEARCH_FAILED); //카카오가 이상한 응답을 줄 경우 errorstatus
         } catch (RestClientException e) {
             log.error("[KakaoLocal] API 호출 오류: {}", e.getMessage());
             throw new GeneralException(ErrorStatus._INTERNAL_SERVER_ERROR);
         }
     }
+
+    // 응답 본문 및 필수 필드 검증 — 비정상 응답은 예외로 전환
+    private void validateResponse(KakaoPlaceSearchResponse response, String query) {
+        if (response == null || response.documents() == null || response.meta() == null) {
+            log.error("[KakaoLocal] 비정상 응답 수신: query={}, response={}", query, response);
+            throw new GeneralException(ErrorStatus.KAKAO_PLACE_SEARCH_FAILED);
+        }
+    }
 }
+
