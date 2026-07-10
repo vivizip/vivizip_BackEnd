@@ -1,4 +1,9 @@
 spring:
+  cloud:
+    aws:
+      s3:
+        enabled: false
+
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME}
@@ -43,3 +48,13 @@ springdoc:
     operations-sorter: method
   api-docs:
     path: /v1/api-docs
+
+cloud:
+  aws:
+    region:
+      static: ap-northeast-2
+    credentials:
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET_KEY}
+    s3:
+      bucket: vivizip-images
