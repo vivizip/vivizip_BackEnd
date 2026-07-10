@@ -5,12 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
-import software.amazon.awssdk.core.sync.RequestBody;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -71,17 +72,19 @@ public class S3Service {
 
     // ── 내부 유틸 ──
     private void putObject(MultipartFile file, String key) {
-        try {
-            PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(key)
-                    .contentType(file.getContentType())
-                    .contentLength(file.getSize())
-                    .build();
-            s3Client.putObject(request,
-                    RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .contentType(file.getContentType())
+                .contentLength(file.getSize())
+                .build();
+
+        try (var inputStream = file.getInputStream()) {
+            s3Client.putObject(request, RequestBody.fromInputStream(inputStream, file.getSize()));
             log.info("S3 업로드 완료: {}", key);
         } catch (IOException e) {
+            throw new RuntimeException("파일 읽기 실패: " + e.getMessage(), e);
+        } catch (SdkException e) {
             throw new RuntimeException("S3 업로드 실패: " + e.getMessage(), e);
         }
     }
