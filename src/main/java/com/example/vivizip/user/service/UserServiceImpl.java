@@ -58,16 +58,18 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
-    @Transactional
+    // @Transactional 제거 — S3 업로드 동안 DB 커넥션 점유 방지
     public String updateProfileImage(Long userId, MultipartFile file) {
+        // 1. 유저 존재 확인 — findById 자체 트랜잭션(readOnly)으로 처리 후 종료
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
-        // 갤러리에서 고른 이미지를 S3에 업로드 (public)
+        // 2. S3 업로드 — 트랜잭션 밖에서 수행
         String imageUrl = s3Service.uploadPublic(file, "profile");
 
-        // User 엔티티의 profileImage 갱신 (카카오 이미지 → 새 이미지로 교체됨)
+        // 3. DB 갱신 — save()의 자체 @Transactional로 짧은 트랜잭션
         user.updateProfile(imageUrl);
+        userRepository.save(user);
 
         return imageUrl;
     }
