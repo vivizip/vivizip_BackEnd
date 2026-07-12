@@ -1,10 +1,12 @@
 package com.example.vivizip.chat.service;
 
+import com.example.vivizip.S3.service.S3Service;
 import com.example.vivizip.chat.dto.ChatMessageResponse;
 import com.example.vivizip.chat.dto.ChatMessageSliceResponse;
 import com.example.vivizip.chat.dto.ChatRoomResponse;
 import com.example.vivizip.chat.entity.ChatMessage;
 import com.example.vivizip.chat.entity.ChatRoom;
+import com.example.vivizip.chat.enums.MessageType;
 import com.example.vivizip.chat.repository.ChatMessageRepository;
 import com.example.vivizip.chat.repository.ChatRoomRepository;
 import com.example.vivizip.common.exception.ErrorStatus;
@@ -14,8 +16,10 @@ import com.example.vivizip.user.entity.User;
 import com.example.vivizip.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +32,9 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
+    private final S3Service s3Service;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final ChatMessagePersister chatMessagePersister;
 
     // 방 생성 or 기존 방 반환 (role 검증 포함)
     @Transactional
@@ -94,5 +101,29 @@ public class ChatRoomService {
         Long nextCursor = found.isEmpty() ? null : found.get(found.size() - 1).getId();
 
         return new ChatMessageSliceResponse(messages, nextCursor, hasNext);
+    }
+
+    // 채팅 이미지 업로드 → S3 저장 후 WebSocket 브로드캐스트
+    // @Transactional 제거  (S3 업로드 동안 DB 커넥션 점유 방지)
+    public ChatMessageResponse uploadImage(Long userId, Long roomId, MultipartFile file) {
+        // 1. 검증 (읽기만, 트랜잭션 불필요)
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.CHAT_ROOM_NOT_FOUND));
+
+        if (!room.hasParticipant(userId)) {
+            throw new GeneralException(ErrorStatus.CHAT_ACCESS_DENIED);
+        }
+
+        // 2. S3 업로드 — 트랜잭션 밖에서 수행
+        String imageUrl = s3Service.uploadPublic(file, "chat");
+
+        // 3. DB 저장 — 별도 빈 호출로 짧은 트랜잭션, 여기서 커밋 완료
+        ChatMessageResponse response =
+                chatMessagePersister.save(roomId, userId, imageUrl, MessageType.IMAGE);
+
+        // 4. 커밋 후 브로드캐스트
+        messagingTemplate.convertAndSend("/sub/chat/" + roomId, response);
+
+        return response;
     }
 }
