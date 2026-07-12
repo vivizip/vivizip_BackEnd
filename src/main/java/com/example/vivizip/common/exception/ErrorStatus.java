@@ -72,6 +72,10 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("카카오 장소 검색 API 호출에 실패했습니다.")
     KAKAO_PLACE_SEARCH_FAILED(INTERNAL_SERVER_ERROR, 4450, "장소 검색에 실패했습니다. 잠시 후 다시 시도해주세요."),
 
+    // appointment (4500~4549)
+    @ExplainError("존재하지 않는 약속입니다.")
+    APPOINTMENT_NOT_FOUND(BAD_REQUEST, 4500, "존재하지 않는 약속입니다."),
+
     // chat (4400~4449)
     @ExplainError("자기 자신과는 채팅방을 생성할 수 없습니다.")
     CHAT_SELF_NOT_ALLOWED(BAD_REQUEST, 4400, "자기 자신과는 채팅할 수 없습니다."),
