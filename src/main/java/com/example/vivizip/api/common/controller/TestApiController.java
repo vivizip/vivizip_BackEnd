@@ -5,6 +5,7 @@ import com.example.vivizip.common.annotation.DisableSwaggerSecurity;
 import com.example.vivizip.security.jwt.dto.JwtToken;
 import com.example.vivizip.security.jwt.service.TokenService;
 import com.example.vivizip.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
@@ -27,17 +28,15 @@ public class TestApiController {
 
     private final TokenService tokenService;
 
-    @DisableSwaggerSecurity // 인증 관련 잠금 없애주는 annotation
+    @DisableSwaggerSecurity
+    @Operation(summary = "헬스 체크", description = "서버 정상 동작 여부 확인용 API. 인증 불필요.")
     @GetMapping("/health-check")
     public ApiResponseDto<String> healthCheckup() {
         return ApiResponseDto.onSuccess(HttpStatus.OK.toString());
     }
 
-    /**
-     * [로컬 전용] 이메일로 JWT 즉시 발급
-     * 카카오 로그인 없이 토큰 흐름 전체를 테스트할 때 사용
-     * 예) POST /api/v1/test/token?email=test@example.com
-     */
+    @DisableSwaggerSecurity
+    @Operation(summary = "[테스트] JWT 즉시 발급", description = "이메일로 JWT를 즉시 발급합니다. 카카오 로그인 없이 토큰 흐름 테스트 시 사용. 로컬 전용.")
     @PostMapping("/token")
     public ResponseEntity<JwtToken> issueTestToken(@RequestParam String email) {
         Authentication authentication = new UsernamePasswordAuthenticationToken(

@@ -1,4 +1,9 @@
 spring:
+  cloud:
+    aws:
+      s3:
+        enabled: false
+
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME}
@@ -35,6 +40,12 @@ app:
     access-expiration: ${JWT_ACCESS_EXPIRATION}
     refresh-expiration: ${JWT_REFRESH_EXPIRATION}
 
+# 카카오 장소검색 api
+kakao:
+  local:
+    base-url: https://dapi.kakao.com
+    api-key: ${KAKAO_REST_API_KEY}
+
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS}
 
@@ -52,3 +63,13 @@ springdoc:
     operations-sorter: method
   api-docs:
     path: /v1/api-docs
+
+cloud:
+  aws:
+    region:
+      static: ap-northeast-2
+    credentials:
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET_KEY}
+    s3:
+      bucket: vivizip-images

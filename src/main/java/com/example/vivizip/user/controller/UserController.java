@@ -1,18 +1,23 @@
 package com.example.vivizip.user.controller;
 
 import com.example.vivizip.security.user.CustomUserDetails;
+import com.example.vivizip.user.dto.ProfileImageResponse;
 import com.example.vivizip.user.dto.UpdateLanguageRequest;
 import com.example.vivizip.user.dto.UpdateProfileRequest;
 import com.example.vivizip.user.dto.UserProfileResponse;
 import com.example.vivizip.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import static com.example.vivizip.consts.StaticVariable.SWAGGER_JWT;
 
@@ -32,14 +37,21 @@ public class UserController {
         return ResponseEntity.ok(userService.getProfile(userDetails.getEmail()));
     }
 
-    @Operation(summary = "프로필 수정", description = "nickname, profileImage 수정 가능. 학교 정보는 수정 불가")
-    @PatchMapping("/me")
-    public ResponseEntity<UserProfileResponse> updateMyProfile(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody UpdateProfileRequest request) {
-        return ResponseEntity.ok(userService.updateProfile(userDetails.getEmail(), request));
+    @Operation(
+            summary = "프로필 이미지 변경",
+            description = "multipart/form-data로 이미지 파일을 업로드하면 S3에 저장 후 변경된 이미지 URL을 반환합니다.\n\n" +
+                    "- 허용 형식: JPEG, PNG, WEBP\n" +
+                    "- 최대 크기: 10MB\n" +
+                    "- form-data key: `file`",
+            requestBody = @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
+    )
+    @PatchMapping(value = "/me/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ProfileImageResponse updateProfileImage(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestPart("file") MultipartFile file) {
+        String imageUrl = userService.updateProfileImage(user.getUserId(), file);
+        return new ProfileImageResponse(imageUrl);
     }
-
     @Operation(summary = "언어 설정 변경", description = "앱 언어 설정 변경 (바텀시트)")
     @PatchMapping("/me/language")
     public ResponseEntity<UserProfileResponse> updateMyLanguage(

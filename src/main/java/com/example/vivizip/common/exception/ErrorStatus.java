@@ -58,39 +58,39 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("일회용 인증 코드가 만료되었거나 유효하지 않습니다. 카카오 로그인을 다시 시도해주세요.")
     AUTH_INVALID_AUTH_CODE(UNAUTHORIZED, 4360, "유효하지 않은 인증 코드입니다. 다시 로그인해주세요."),
 
-    // matching (4400~4449)
+    // matching (4550~4599)
     @ExplainError("유학생 역할이 아닌 사용자가 유학생 전용 기능에 접근했습니다.")
-    MATCH_ROLE_NOT_STUDENT(FORBIDDEN, 4401, "유학생만 이용할 수 있는 기능입니다."),
+    MATCH_ROLE_NOT_STUDENT(FORBIDDEN, 4551, "유학생만 이용할 수 있는 기능입니다."),
     @ExplainError("학교 이메일 인증이 완료되지 않은 사용자가 온보딩/매칭을 시도했습니다.")
-    MATCH_SCHOOL_NOT_VERIFIED(FORBIDDEN, 4402, "학교 인증이 완료되지 않았습니다."),
+    MATCH_SCHOOL_NOT_VERIFIED(FORBIDDEN, 4552, "학교 인증이 완료되지 않았습니다."),
     @ExplainError("ACTIVE 상태가 아닌 사용자가 매칭 관련 기능에 접근했습니다.")
-    MATCH_USER_STATUS_NOT_ACTIVE(FORBIDDEN, 4403, "활성 상태의 사용자만 이용할 수 있습니다."),
+    MATCH_USER_STATUS_NOT_ACTIVE(FORBIDDEN, 4553, "활성 상태의 사용자만 이용할 수 있습니다."),
     @ExplainError("학교 인증을 통해 schoolId가 설정되지 않은 사용자가 매칭을 시도했습니다.")
-    MATCH_SCHOOL_ID_REQUIRED(BAD_REQUEST, 4404, "학교 정보가 없습니다. 학교 인증을 먼저 진행해주세요."),
+    MATCH_SCHOOL_ID_REQUIRED(BAD_REQUEST, 4554, "학교 정보가 없습니다. 학교 인증을 먼저 진행해주세요."),
     @ExplainError("이미 MATCHED 상태의 매칭이 있는 사용자가 다시 매칭을 신청했습니다.")
-    MATCH_ALREADY_MATCHED(BAD_REQUEST, 4405, "이미 매칭이 진행 중입니다."),
+    MATCH_ALREADY_MATCHED(BAD_REQUEST, 4555, "이미 매칭이 진행 중입니다."),
     @ExplainError("가능 시간대(TimeSlot)를 등록하지 않은 사용자가 매칭을 시도했습니다.")
-    MATCH_TIME_SLOT_NOT_FOUND(BAD_REQUEST, 4406, "온보딩이 필요합니다. 가능한 시간대를 먼저 등록해주세요."),
+    MATCH_TIME_SLOT_NOT_FOUND(BAD_REQUEST, 4556, "온보딩이 필요합니다. 가능한 시간대를 먼저 등록해주세요."),
     @ExplainError("조건에 맞는 매칭 후보(서포터즈/유학생)가 존재하지 않습니다.")
-    MATCH_CANDIDATE_NOT_FOUND(NOT_FOUND, 4407, "매칭 가능한 상대가 없습니다."),
+    MATCH_CANDIDATE_NOT_FOUND(NOT_FOUND, 4557, "매칭 가능한 상대가 없습니다."),
     @ExplainError("로그인 사용자의 MATCHED 상태 매칭 결과가 존재하지 않습니다.")
-    MATCH_RESULT_NOT_FOUND(NOT_FOUND, 4408, "매칭 결과가 없습니다."),
+    MATCH_RESULT_NOT_FOUND(NOT_FOUND, 4558, "매칭 결과가 없습니다."),
     @ExplainError("존재하지 않는 matchId로 요청했습니다.")
-    MATCH_NOT_FOUND(NOT_FOUND, 4409, "매칭 정보를 찾을 수 없습니다."),
+    MATCH_NOT_FOUND(NOT_FOUND, 4559, "매칭 정보를 찾을 수 없습니다."),
     @ExplainError("로그인 사용자가 studentId, supporterId 어디에도 해당하지 않는 매칭에 접근했습니다.")
-    MATCH_FORBIDDEN(FORBIDDEN, 4410, "해당 매칭에 대한 권한이 없습니다."),
+    MATCH_FORBIDDEN(FORBIDDEN, 4560, "해당 매칭에 대한 권한이 없습니다."),
     @ExplainError("MATCHED 상태가 아닌 매칭(이미 취소된 매칭 등)에 재매칭을 시도했습니다.")
-    MATCH_STATUS_NOT_MATCHED(BAD_REQUEST, 4411, "이미 종료되었거나 취소된 매칭입니다."),
+    MATCH_STATUS_NOT_MATCHED(BAD_REQUEST, 4561, "이미 종료되었거나 취소된 매칭입니다."),
     @ExplainError("rematchCount가 3 이상인 사용자가 재매칭을 시도했습니다.")
-    MATCH_REMATCH_LIMIT_EXCEEDED(BAD_REQUEST, 4412, "재매칭은 최대 3회까지 가능합니다."),
+    MATCH_REMATCH_LIMIT_EXCEEDED(BAD_REQUEST, 4562, "재매칭은 최대 3회까지 가능합니다."),
     @ExplainError("school_email_domains에 등록되지 않은 도메인의 이메일로 인증을 요청했습니다.")
-    SCHOOL_EMAIL_DOMAIN_NOT_SUPPORTED(BAD_REQUEST, 4413, "지원하지 않는 학교 이메일입니다."),
+    SCHOOL_EMAIL_DOMAIN_NOT_SUPPORTED(BAD_REQUEST, 4563, "지원하지 않는 학교 이메일입니다."),
     @ExplainError("Redis에 인증 정보가 없거나 TTL이 만료되었습니다.")
-    SCHOOL_VERIFICATION_CODE_EXPIRED(BAD_REQUEST, 4414, "인증 코드가 만료되었습니다. 다시 요청해주세요."),
+    SCHOOL_VERIFICATION_CODE_EXPIRED(BAD_REQUEST, 4564, "인증 코드가 만료되었습니다. 다시 요청해주세요."),
     @ExplainError("인증 확인 요청의 schoolEmail이 발송 요청 당시의 schoolEmail과 다릅니다.")
-    SCHOOL_VERIFICATION_EMAIL_MISMATCH(BAD_REQUEST, 4415, "인증 요청한 이메일과 일치하지 않습니다."),
+    SCHOOL_VERIFICATION_EMAIL_MISMATCH(BAD_REQUEST, 4565, "인증 요청한 이메일과 일치하지 않습니다."),
     @ExplainError("인증 확인 요청의 code가 저장된 code와 다릅니다.")
-    SCHOOL_VERIFICATION_CODE_MISMATCH(BAD_REQUEST, 4416, "인증 코드가 일치하지 않습니다."),
+    SCHOOL_VERIFICATION_CODE_MISMATCH(BAD_REQUEST, 4566, "인증 코드가 일치하지 않습니다."),
 
     // member (4050~4099)
     @ExplainError("존재하지 않는 NameType 입니다.")
@@ -98,7 +98,27 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("존재하지 않는 회원입니다.")
     MEMBER_NOT_FOUND(BAD_REQUEST, 4051, "존재하지 않는 회원입니다."),
     @ExplainError("탈퇴한 회원입니다.")
-    MEMBER_WITHDRAWN(FORBIDDEN, 4052, "탈퇴한 회원입니다.");
+    MEMBER_WITHDRAWN(FORBIDDEN, 4052, "탈퇴한 회원입니다."),
+    @ExplainError("존재하지 않는 유저입니다.")
+    USER_NOT_FOUND(BAD_REQUEST, 4053, "존재하지 않는 유저입니다."),
+
+    // kakao place (4450~4499)
+    @ExplainError("카카오 장소 검색 API 호출에 실패했습니다.")
+    KAKAO_PLACE_SEARCH_FAILED(INTERNAL_SERVER_ERROR, 4450, "장소 검색에 실패했습니다. 잠시 후 다시 시도해주세요."),
+
+    // appointment (4500~4549)
+    @ExplainError("존재하지 않는 약속입니다.")
+    APPOINTMENT_NOT_FOUND(BAD_REQUEST, 4500, "존재하지 않는 약속입니다."),
+
+    // chat (4400~4449)
+    @ExplainError("자기 자신과는 채팅방을 생성할 수 없습니다.")
+    CHAT_SELF_NOT_ALLOWED(BAD_REQUEST, 4400, "자기 자신과는 채팅할 수 없습니다."),
+    @ExplainError("같은 역할(Role)끼리는 채팅방을 생성할 수 없습니다.")
+    CHAT_SAME_ROLE_NOT_ALLOWED(BAD_REQUEST, 4401, "같은 역할끼리는 채팅할 수 없습니다."),
+    @ExplainError("존재하지 않는 채팅방입니다.")
+    CHAT_ROOM_NOT_FOUND(BAD_REQUEST, 4402, "존재하지 않는 채팅방입니다."),
+    @ExplainError("해당 채팅방에 접근 권한이 없습니다.")
+    CHAT_ACCESS_DENIED(FORBIDDEN, 4403, "채팅방에 접근 권한이 없습니다.");
 
 
 
