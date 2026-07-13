@@ -64,3 +64,8 @@ cloud:
       secret-key: ${AWS_SECRET_KEY}
     s3:
       bucket: vivizip-images
+
+clova:
+  ocr:
+    invoke-url: ${CLOVA_OCR_INVOKE_URL}
+    secret-key: ${CLOVA_OCR_SECRET_KEY}
