@@ -14,8 +14,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import static com.example.vivizip.consts.StaticVariable.SWAGGER_JWT;
+
 @Tag(name = "User", description = "사용자 프로필 API")
-@SecurityRequirement(name = "bearerAuth")
+@SecurityRequirement(name = SWAGGER_JWT)
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
