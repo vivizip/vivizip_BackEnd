@@ -120,7 +120,13 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("존재하지 않는 채팅방입니다.")
     CHAT_ROOM_NOT_FOUND(BAD_REQUEST, 4402, "존재하지 않는 채팅방입니다."),
     @ExplainError("해당 채팅방에 접근 권한이 없습니다.")
-    CHAT_ACCESS_DENIED(FORBIDDEN, 4403, "채팅방에 접근 권한이 없습니다.");
+    CHAT_ACCESS_DENIED(FORBIDDEN, 4403, "채팅방에 접근 권한이 없습니다."),
+
+    // document review (4600~4649)
+    @ExplainError("검토할 문서 내용이 비어 있습니다.")
+    DOCUMENT_TEXT_EMPTY(BAD_REQUEST, 4600, "검토할 문서 내용이 비어 있습니다."),
+    @ExplainError("재시도를 모두 소진해도 AI 응답을 구조화된 형식으로 해석하지 못했습니다.")
+    DOCUMENT_LLM_RESPONSE_INVALID(INTERNAL_SERVER_ERROR, 4601, "AI 검토 응답을 해석할 수 없습니다. 잠시 후 다시 시도해주세요.");
 
 
 
