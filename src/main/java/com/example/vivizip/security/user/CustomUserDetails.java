@@ -19,12 +19,13 @@ public class CustomUserDetails implements UserDetails {
     public CustomUserDetails(User user) {
         this.userId = user.getId();
         this.email = user.getEmail();
-        this.role = "ROLE_" + user.getRole().name(); // ROLE_STUDENT or ROLE_SUPPORTER
+        // 온보딩 전에는 role이 아직 정해지지 않아 null일 수 있음
+        this.role = user.getRole() != null ? "ROLE_" + user.getRole().name() : null;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role));
+        return role != null ? List.of(new SimpleGrantedAuthority(role)) : List.of();
     }
 
     @Override
