@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.example.vivizip.consts.StaticVariable.SWAGGER_JWT;
+
 @Tag(name = "Options", description = "온보딩 선택지 조회 API")
-@SecurityRequirement(name = "bearerAuth")
+@SecurityRequirement(name = SWAGGER_JWT)
 @RestController
 @RequestMapping("/api/options")
 @RequiredArgsConstructor
