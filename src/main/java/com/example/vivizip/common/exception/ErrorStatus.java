@@ -91,6 +91,8 @@ public enum ErrorStatus implements BaseErrorCode{
     SCHOOL_VERIFICATION_EMAIL_MISMATCH(BAD_REQUEST, 4565, "인증 요청한 이메일과 일치하지 않습니다."),
     @ExplainError("인증 확인 요청의 code가 저장된 code와 다릅니다.")
     SCHOOL_VERIFICATION_CODE_MISMATCH(BAD_REQUEST, 4566, "인증 코드가 일치하지 않습니다."),
+    @ExplainError("메일 서버 오류 등으로 인증 코드 이메일 발송에 실패했습니다.")
+    SCHOOL_VERIFICATION_EMAIL_SEND_FAILED(INTERNAL_SERVER_ERROR, 4567, "인증 메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요."),
 
     // member (4050~4099)
     @ExplainError("존재하지 않는 NameType 입니다.")
