@@ -58,6 +58,9 @@ jobs:
             AWS_REGION=ap-northeast-2
 
             KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
+            
+            CLOVA_OCR_INVOKE_URL=${{ secrets.CLOVA_OCR_INVOKE_URL }}
+            CLOVA_OCR_SECRET_KEY=${{ secrets.CLOVA_OCR_SECRET_KEY }}
 
             CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
             SERVER_PORT=${{ secrets.SERVER_PORT }}
