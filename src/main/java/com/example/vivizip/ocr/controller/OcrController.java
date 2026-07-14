@@ -109,7 +109,7 @@ public class OcrController {
                 sb.append("=== 페이지 ").append(i + 1).append(" ===\n");
             }
             response.images().forEach(image -> {
-                if (image.tables() == null) {
+                if (image.tables() == null || image.tables().isEmpty()) {
                     sb.append("표 없음 (표 추출 안 켜졌거나 표 미검출)\n");
                     return;
                 }
