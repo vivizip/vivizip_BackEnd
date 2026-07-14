@@ -68,7 +68,10 @@ jobs:
             
             MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
             MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-            
+
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            OPENAI_MODEL=${{ secrets.OPENAI_MODEL }}
+
             EOF
             docker compose down --volumes --remove-orphans || true
             docker compose up -d --build
