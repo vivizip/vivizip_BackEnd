@@ -35,7 +35,6 @@ public class User extends BaseEntity {
 
     // role varchar
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private Role role;
 
     // language varchar DEFAULT 'KOREAN'
@@ -68,6 +67,20 @@ public class User extends BaseEntity {
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
 
+    @Column(name = "rematch_count", nullable = false)
+    @Builder.Default
+    private int rematchCount = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "korean_level", length = 20)
+    private KoreanLevel koreanLevel;
+
+    @Column(name = "deposit_budget")
+    private Integer depositBudget;
+
+    @Column(name = "monthly_rent_budget")
+    private Integer monthlyRentBudget;
+
     public void updateProfile(String profileImage) {
         if (profileImage != null) this.profileImage = profileImage;
     }
@@ -76,7 +89,34 @@ public class User extends BaseEntity {
         this.language = language;
     }
 
+    public void updateRole(Role role) {
+        this.role = role;
+    }
+
     public void withdraw() {
         this.status = UserStatus.WITHDRAWN;
+    }
+
+    public void updateSupporterProfile(Nationality nationality, Gender gender) {
+        this.nationality = nationality;
+        this.gender = gender;
+    }
+
+    public void updateStudentProfile(Nationality nationality, Gender gender, KoreanLevel koreanLevel,
+                                      Integer depositBudget, Integer monthlyRentBudget) {
+        this.nationality = nationality;
+        this.gender = gender;
+        this.koreanLevel = koreanLevel;
+        this.depositBudget = depositBudget;
+        this.monthlyRentBudget = monthlyRentBudget;
+    }
+
+    public void verifySchool(Long schoolId) {
+        this.schoolId = schoolId;
+        this.schoolVerified = true;
+    }
+
+    public void increaseRematchCount() {
+        this.rematchCount++;
     }
 }
