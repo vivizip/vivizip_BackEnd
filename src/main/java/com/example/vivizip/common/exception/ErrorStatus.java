@@ -135,6 +135,10 @@ public enum ErrorStatus implements BaseErrorCode{
     MOVE_IN_RECORD_FORBIDDEN(FORBIDDEN, 4651, "해당 입주 기록에 대한 권한이 없습니다."),
     @ExplainError("동일한 계약(leaseCaseId)에 대한 입주 기록이 이미 존재합니다.")
     MOVE_IN_RECORD_ALREADY_EXISTS(BAD_REQUEST, 4652, "이미 해당 계약에 대한 입주 기록이 존재합니다.");
+    @ExplainError("존재하지 않는 서류(lease_document)입니다.")
+    DOCUMENT_NOT_FOUND(BAD_REQUEST, 4602, "존재하지 않는 서류입니다."),
+    @ExplainError("해당 서류 타입을 분석하는 파이프라인이 아직 구현되지 않았습니다.")
+    DOCUMENT_TYPE_NOT_SUPPORTED(BAD_REQUEST, 4603, "아직 지원하지 않는 서류 타입입니다.");
 
 
 

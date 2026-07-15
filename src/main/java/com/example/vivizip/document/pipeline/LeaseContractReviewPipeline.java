@@ -3,6 +3,7 @@ package com.example.vivizip.document.pipeline;
 import com.example.vivizip.common.exception.ErrorStatus;
 import com.example.vivizip.common.exception.GeneralException;
 import com.example.vivizip.document.dto.LeaseContractAnalysisResult;
+import com.example.vivizip.document.entity.AnalysisType;
 import com.example.vivizip.llm.LlmExtractionException;
 import com.example.vivizip.llm.LlmJsonExtractor;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,11 @@ public class LeaseContractReviewPipeline implements DocumentAnalysisPipeline<Lea
             """;
 
     private final LlmJsonExtractor llmJsonExtractor;
+
+    @Override
+    public AnalysisType type() {
+        return AnalysisType.LEASE_CONTRACT_ANALYSIS;
+    }
 
     @Override
     public LeaseContractAnalysisResult analyze(String documentText) {

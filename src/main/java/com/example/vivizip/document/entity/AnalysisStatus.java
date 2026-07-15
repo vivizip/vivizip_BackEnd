@@ -1,7 +1,8 @@
 package com.example.vivizip.document.entity;
 
-public enum DocumentReviewStatus {
+public enum AnalysisStatus {
     PENDING,
+    PROCESSING,
     COMPLETED,
     FAILED
 }
