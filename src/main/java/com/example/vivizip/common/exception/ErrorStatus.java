@@ -130,7 +130,9 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("존재하지 않는 서류(lease_document)입니다.")
     DOCUMENT_NOT_FOUND(BAD_REQUEST, 4602, "존재하지 않는 서류입니다."),
     @ExplainError("해당 서류 타입을 분석하는 파이프라인이 아직 구현되지 않았습니다.")
-    DOCUMENT_TYPE_NOT_SUPPORTED(BAD_REQUEST, 4603, "아직 지원하지 않는 서류 타입입니다.");
+    DOCUMENT_TYPE_NOT_SUPPORTED(BAD_REQUEST, 4603, "아직 지원하지 않는 서류 타입입니다."),
+    @ExplainError("존재하지 않거나 로그인 사용자의 임대차 케이스가 아닙니다.")
+    LEASE_CASE_NOT_FOUND(NOT_FOUND, 4604, "임대차 케이스를 찾을 수 없습니다.");
 
 
 
@@ -165,5 +167,4 @@ public enum ErrorStatus implements BaseErrorCode{
         return Objects.nonNull(annotation) ? annotation.value() : this.getMessage();
     }
 }
-
 
