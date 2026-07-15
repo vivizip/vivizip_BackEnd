@@ -44,7 +44,19 @@ public class S3Service {
         validate(file, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE);
         String key = generateKey(folder, file.getOriginalFilename());
         putObject(file, key);
-        return toPublicUrl(key);
+        return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
+    }
+
+    // ── public 업로드 후 key 반환 (사진 그룹 등 S3 삭제가 필요한 public 파일) ──
+    public String uploadPublicReturnKey(MultipartFile file, String folder) {
+        validate(file, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE);
+        String key = generateKey(folder, file.getOriginalFilename());
+        putObject(file, key);
+        return key;
+    }
+
+    public String toPublicUrl(String key) {
+        return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
     }
 
     // ── private 업로드 (계약서/서류) → key만 반환 (DB에 저장) ──
@@ -68,6 +80,17 @@ public class S3Service {
                 .build();
 
         return s3Presigner.presignGetObject(presignRequest).url().toString();
+    }
+
+    // ── 삭제 ──
+    public void delete(String key) {
+        try {
+            s3Client.deleteObject(b -> b.bucket(bucket).key(key));
+            log.info("S3 삭제 완료: {}", key);
+        } catch (SdkException e) {
+            log.error("S3 삭제 실패: {}", e.getMessage());
+            throw new RuntimeException("S3 삭제 실패: " + e.getMessage(), e);
+        }
     }
 
     // ── 내부 유틸 ──
@@ -110,7 +133,4 @@ public class S3Service {
         return folder + "/" + UUID.randomUUID() + ext;
     }
 
-    private String toPublicUrl(String key) {
-        return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
-    }
 }

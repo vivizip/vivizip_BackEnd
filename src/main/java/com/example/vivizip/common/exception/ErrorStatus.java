@@ -127,6 +127,14 @@ public enum ErrorStatus implements BaseErrorCode{
     DOCUMENT_TEXT_EMPTY(BAD_REQUEST, 4600, "검토할 문서 내용이 비어 있습니다."),
     @ExplainError("재시도를 모두 소진해도 AI 응답을 구조화된 형식으로 해석하지 못했습니다.")
     DOCUMENT_LLM_RESPONSE_INVALID(INTERNAL_SERVER_ERROR, 4601, "AI 검토 응답을 해석할 수 없습니다. 잠시 후 다시 시도해주세요."),
+
+    // move-in record (4650~4699)
+    @ExplainError("존재하지 않는 입주 기록 ID입니다.")
+    MOVE_IN_RECORD_NOT_FOUND(NOT_FOUND, 4650, "존재하지 않는 입주 기록입니다."),
+    @ExplainError("본인의 입주 기록이 아닙니다.")
+    MOVE_IN_RECORD_FORBIDDEN(FORBIDDEN, 4651, "해당 입주 기록에 대한 권한이 없습니다."),
+    @ExplainError("동일한 계약(leaseCaseId)에 대한 입주 기록이 이미 존재합니다.")
+    MOVE_IN_RECORD_ALREADY_EXISTS(BAD_REQUEST, 4652, "이미 해당 계약에 대한 입주 기록이 존재합니다.");
     @ExplainError("존재하지 않는 서류(lease_document)입니다.")
     DOCUMENT_NOT_FOUND(BAD_REQUEST, 4602, "존재하지 않는 서류입니다."),
     @ExplainError("해당 서류 타입을 분석하는 파이프라인이 아직 구현되지 않았습니다.")
