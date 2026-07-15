@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -43,9 +44,16 @@ public class LeaseDocumentUploadService {
             throw new GeneralException(ErrorStatus.DOCUMENT_FILE_EMPTY);
         }
         recorder.assertOwnedLeaseCase(userId, leaseCaseId);
-        List<String> keys = files.stream()
-                .map(file -> s3Service.uploadPrivate(file, S3Folder.LEASE_DOCUMENT.getPath()))
-                .toList();
-        return recorder.saveUploadedDocument(leaseCaseId, documentType, keys);
+
+        List<String> uploadedKeys = new ArrayList<>();
+        try {
+            for (MultipartFile file : files) {
+                uploadedKeys.add(s3Service.uploadPrivate(file, S3Folder.LEASE_DOCUMENT.getPath()));
+            }
+            return recorder.saveUploadedDocument(leaseCaseId, documentType, uploadedKeys);
+        } catch (RuntimeException e) {
+            uploadedKeys.forEach(s3Service::delete);
+            throw e;
+        }
     }
 }

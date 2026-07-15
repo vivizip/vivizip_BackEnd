@@ -128,7 +128,7 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("재시도를 모두 소진해도 AI 응답을 구조화된 형식으로 해석하지 못했습니다.")
     DOCUMENT_LLM_RESPONSE_INVALID(INTERNAL_SERVER_ERROR, 4601, "AI 검토 응답을 해석할 수 없습니다. 잠시 후 다시 시도해주세요."),
     @ExplainError("존재하지 않는 서류(lease_document)입니다.")
-    DOCUMENT_NOT_FOUND(BAD_REQUEST, 4602, "존재하지 않는 서류입니다."),
+    DOCUMENT_NOT_FOUND(NOT_FOUND, 4602, "존재하지 않는 서류입니다."),
     @ExplainError("해당 서류 타입을 분석하는 파이프라인이 아직 구현되지 않았습니다.")
     DOCUMENT_TYPE_NOT_SUPPORTED(BAD_REQUEST, 4603, "아직 지원하지 않는 서류 타입입니다."),
     @ExplainError("존재하지 않거나 로그인 사용자의 임대차 케이스가 아닙니다.")

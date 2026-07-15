@@ -38,6 +38,11 @@ public class LeaseDocument {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Version
+    private Long version;
+
+    private static final int FAILURE_REASON_MAX_LENGTH = 500;
+
     private LeaseDocument(Long leaseCaseId, LeaseDocumentType documentType) {
         this.leaseCaseId = leaseCaseId;
         this.documentType = documentType;
@@ -80,7 +85,13 @@ public class LeaseDocument {
         if (status != LeaseDocumentStatus.ANALYZING) {
             throw new IllegalStateException("ANALYZING 상태에서만 분석 실패 처리를 할 수 있습니다. 현재 상태: " + status);
         }
-        this.failureReason = failureReason;
+        this.failureReason = truncate(failureReason);
         this.status = LeaseDocumentStatus.ANALYSIS_FAILED;
+    }
+
+    private String truncate(String value) {
+        return value.length() <= FAILURE_REASON_MAX_LENGTH
+                ? value
+                : value.substring(0, FAILURE_REASON_MAX_LENGTH - 3) + "...";
     }
 }

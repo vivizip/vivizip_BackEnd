@@ -62,16 +62,15 @@ public class DocumentAnalysisService {
         Long leaseCaseId = document.getLeaseCaseId();
         Long analysisId = recorder.start(documentId, analysisType);
 
-        AnalysisResult result;
         try {
-            result = pipeline.analyze(ocrText);
+            AnalysisResult result = pipeline.analyze(ocrText);
             result = applyReferenceCheck(leaseCaseId, analysisType, result);
-        } catch (GeneralException e) {
-            recorder.fail(documentId, analysisId, e.getMessage());
+            return recorder.complete(documentId, analysisId, analysisType, result, toJson(result));
+        } catch (RuntimeException e) {
+            String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            recorder.fail(documentId, analysisId, reason);
             throw e;
         }
-
-        return recorder.complete(documentId, analysisId, analysisType, result, toJson(result));
     }
 
     private AnalysisResult applyReferenceCheck(Long leaseCaseId, AnalysisType analysisType, AnalysisResult result) {

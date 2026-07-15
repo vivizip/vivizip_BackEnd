@@ -56,11 +56,18 @@ public class DocumentAnalysis {
     }
 
     public void start() {
+        if (status != AnalysisStatus.PENDING) {
+            throw new IllegalStateException("PENDING 상태에서만 분석을 시작할 수 있습니다. 현재 상태: " + status);
+        }
         this.status = AnalysisStatus.PROCESSING;
         this.startedAt = LocalDateTime.now();
     }
 
     public void complete(String resultJson, String rawResponseJson) {
+        if (status != AnalysisStatus.PROCESSING) {
+            throw new IllegalStateException("PROCESSING 상태에서만 분석을 완료할 수 있습니다. 현재 상태: " + status);
+        }
+        this.failureReason = null;
         this.resultJson = resultJson;
         this.rawResponseJson = rawResponseJson;
         this.status = AnalysisStatus.COMPLETED;
@@ -68,6 +75,11 @@ public class DocumentAnalysis {
     }
 
     public void fail(String failureReason) {
+        if (status != AnalysisStatus.PROCESSING) {
+            throw new IllegalStateException("PROCESSING 상태에서만 분석 실패 처리를 할 수 있습니다. 현재 상태: " + status);
+        }
+        this.resultJson = null;
+        this.rawResponseJson = null;
         this.failureReason = failureReason;
         this.status = AnalysisStatus.FAILED;
         this.completedAt = LocalDateTime.now();

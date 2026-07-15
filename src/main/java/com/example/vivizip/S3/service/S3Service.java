@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -53,6 +54,15 @@ public class S3Service {
         String key = generateKey(folder, file.getOriginalFilename());
         putObject(file, key);
         return key;  // URL 아님! key만. 조회 시 presigned 발급
+    }
+
+    // ── 업로드 도중 실패 시 이미 올라간 객체 정리용 ──
+    public void delete(String key) {
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
+        } catch (SdkException e) {
+            log.warn("S3 정리 실패 (key={}): {}", key, e.getMessage());
+        }
     }
 
     // ── presigned URL 발급 (private 파일 조회용, 5분 유효) ──
