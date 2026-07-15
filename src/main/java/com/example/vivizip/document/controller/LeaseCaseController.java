@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "Lease Case", description = "임대차 케이스 API")
+@Tag(name = "Lease Case", description = "임대차 케이스 API(사용자가 입력한 주소와 이름 관련 API")
 @RestController
 @RequestMapping("/api/lease-cases")
 @RequiredArgsConstructor
