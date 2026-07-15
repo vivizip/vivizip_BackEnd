@@ -2,11 +2,14 @@ package com.example.vivizip.document.service;
 
 import com.example.vivizip.document.dto.AnalysisResult;
 import com.example.vivizip.document.dto.DocumentAnalysisResponse;
+import com.example.vivizip.document.dto.RegistryAnalysisResult;
 import com.example.vivizip.document.entity.AnalysisType;
 import com.example.vivizip.document.entity.DocumentAnalysis;
 import com.example.vivizip.document.entity.LeaseDocument;
+import com.example.vivizip.document.entity.ReferenceBaseline;
 import com.example.vivizip.document.repository.DocumentAnalysisRepository;
 import com.example.vivizip.document.repository.LeaseDocumentRepository;
+import com.example.vivizip.document.repository.ReferenceBaselineRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -21,6 +24,7 @@ class DocumentAnalysisRecorder {
 
     private final LeaseDocumentRepository leaseDocumentRepository;
     private final DocumentAnalysisRepository documentAnalysisRepository;
+    private final ReferenceBaselineRepository referenceBaselineRepository;
 
     @Transactional
     public Long start(Long documentId, AnalysisType analysisType) {
@@ -48,5 +52,19 @@ class DocumentAnalysisRecorder {
     public void fail(Long documentId, Long analysisId, String reason) {
         documentAnalysisRepository.findById(analysisId).ifPresent(analysis -> analysis.fail(reason));
         leaseDocumentRepository.findById(documentId).ifPresent(document -> document.failAnalysis(reason));
+    }
+
+    @Transactional
+    public void saveRegistryBaseline(Long leaseCaseId, RegistryAnalysisResult r) {
+        referenceBaselineRepository.findByLeaseCaseId(leaseCaseId)
+                .ifPresentOrElse(
+                        existing -> existing.update(
+                                r.ownerName(), r.propertyAddress(),
+                                r.hasMortgage(), r.mortgageMaximumClaimAmount()),
+                        () -> referenceBaselineRepository.save(
+                                ReferenceBaseline.create(
+                                        leaseCaseId, r.ownerName(), r.propertyAddress(),
+                                        r.hasMortgage(), r.mortgageMaximumClaimAmount()))
+                );
     }
 }

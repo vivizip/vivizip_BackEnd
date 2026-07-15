@@ -51,6 +51,13 @@ public class LeaseDocument {
         return new LeaseDocument(leaseCaseId, documentType);
     }
 
+    // 이미지 업로드+분석 일체형 흐름에서 사용 (별도 upload 단계 없음)
+    public static LeaseDocument createUploaded(Long leaseCaseId, LeaseDocumentType documentType) {
+        LeaseDocument doc = new LeaseDocument(leaseCaseId, documentType);
+        doc.status = LeaseDocumentStatus.UPLOADED;
+        return doc;
+    }
+
     public void upload(String fileUrl) {
         if (fileUrl == null || fileUrl.isBlank()) {
             throw new IllegalArgumentException("fileUrl은 비어 있을 수 없습니다.");
