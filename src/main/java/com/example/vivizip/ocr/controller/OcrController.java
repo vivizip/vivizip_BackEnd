@@ -1,7 +1,14 @@
 package com.example.vivizip.ocr.controller;
 
 import com.example.vivizip.ocr.dto.ClovaOcrResponse;
+
 import com.example.vivizip.ocr.service.OcrTextExtractionService;
+
+import com.example.vivizip.ocr.dto.KeywordSearchResponse;
+import com.example.vivizip.ocr.dto.OcrSaveResponse;
+import com.example.vivizip.ocr.service.OcrService;
+import com.example.vivizip.security.user.CustomUserDetails;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -12,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,8 +35,12 @@ public class OcrController {
 
     private final OcrTextExtractionService ocrTextExtractionService;
 
+    private final ClovaOcrClient clovaOcrClient;
+    private final OcrService ocrService;
+
+
     @Operation(
-            summary = "OCR 원본 응답 반환",
+            summary = "OCR 원본 응답 반환 // 테스트 api",
             description = "이미지를 1장 이상 업로드하면 각 페이지의 CLOVA OCR API 응답을 리스트로 반환합니다. 응답 구조 확인용입니다."
     )
     @ApiResponses({
@@ -117,5 +129,54 @@ public class OcrController {
             }
         }
         return ResponseEntity.ok(sb.toString());
+    }
+
+
+    @Operation(
+            summary = "OCR 결과 저장 // 실사용 api",
+            description = "이미지를 1장 이상 업로드하면 CLOVA OCR을 수행하고 결과를 DB에 저장합니다. 저장된 OCR 결과 ID를 반환합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "저장 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 파일 형식")
+    })
+    @PostMapping(value = "/save", consumes = "multipart/form-data")
+    public ResponseEntity<OcrSaveResponse> saveOcr(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "OCR 처리 후 저장할 이미지 파일 목록 (jpg, png 등, 여러 장 가능)", required = true)
+            @RequestParam("files") List<MultipartFile> files
+    ) throws IOException {
+        return ResponseEntity.ok(ocrService.save(user.getUserId(), files));
+    }
+
+    @Operation(
+            summary = "OCR 결과 키워드 좌표 검색",
+            description = "저장된 OCR 결과에서 특정 키워드가 포함된 텍스트 필드를 검색하고 해당 좌표(boundingPoly)를 반환합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "검색 성공"),
+            @ApiResponse(responseCode = "403", description = "접근 권한 없음"),
+            @ApiResponse(responseCode = "404", description = "OCR 결과 없음")
+    })
+    @GetMapping("/{id}/search")
+    public ResponseEntity<KeywordSearchResponse> searchKeyword(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long id,
+            @Parameter(description = "검색할 키워드 (예: 공동주택)", required = true)
+            @RequestParam String keyword
+    ) throws IOException {
+        return ResponseEntity.ok(ocrService.searchKeyword(user.getUserId(), id, keyword));
+    }
+
+    private ClovaOcrResponse requestOcr(MultipartFile file) throws IOException {
+        String base64 = Base64.getEncoder().encodeToString(file.getBytes());
+        String format = extractFormat(file.getOriginalFilename());
+        ClovaOcrRequest request = ClovaOcrRequest.ofSingleImage(format, base64);
+        return clovaOcrClient.callOcr(request);
+    }
+
+    private String extractFormat(String filename) {
+        if (filename == null || !filename.contains(".")) return "jpg";
+        return filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
     }
 }
