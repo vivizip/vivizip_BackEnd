@@ -128,6 +128,12 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("재시도를 모두 소진해도 AI 응답을 구조화된 형식으로 해석하지 못했습니다.")
     DOCUMENT_LLM_RESPONSE_INVALID(INTERNAL_SERVER_ERROR, 4601, "AI 검토 응답을 해석할 수 없습니다. 잠시 후 다시 시도해주세요."),
 
+    // ocr result (4700~4749)
+    @ExplainError("존재하지 않는 OCR 결과 ID입니다.")
+    OCR_RESULT_NOT_FOUND(NOT_FOUND, 4700, "존재하지 않는 OCR 결과입니다."),
+    @ExplainError("본인의 OCR 결과가 아닙니다.")
+    OCR_RESULT_FORBIDDEN(FORBIDDEN, 4701, "해당 OCR 결과에 대한 권한이 없습니다.");
+  
     // move-in record (4650~4699)
     @ExplainError("존재하지 않는 입주 기록 ID입니다.")
     MOVE_IN_RECORD_NOT_FOUND(NOT_FOUND, 4650, "존재하지 않는 입주 기록입니다."),

@@ -19,7 +19,11 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
     open-in-view: false
-
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 20MB
+      max-request-size: 50MB
   data:
     redis:
       host: ${REDIS_HOST}
