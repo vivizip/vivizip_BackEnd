@@ -56,6 +56,7 @@ public class DocumentAnalysisController {
 
         return new BuildingLedgerAnalysisResult(
                 result.issuedDate(), result.hasViolation(), result.ownerName(), result.ownershipTransferDate(), result.address(),
+                result.buildingUse(), result.residential(),
                 matches(result.ownerName(), referenceOwnerName),
                 matches(result.address(), referenceAddress)
         );

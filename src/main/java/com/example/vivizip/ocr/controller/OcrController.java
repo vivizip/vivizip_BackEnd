@@ -1,12 +1,14 @@
 package com.example.vivizip.ocr.controller;
 
-import com.example.vivizip.ocr.client.ClovaOcrClient;
-import com.example.vivizip.ocr.dto.ClovaOcrRequest;
 import com.example.vivizip.ocr.dto.ClovaOcrResponse;
+
+import com.example.vivizip.ocr.service.OcrTextExtractionService;
+
 import com.example.vivizip.ocr.dto.KeywordSearchResponse;
 import com.example.vivizip.ocr.dto.OcrSaveResponse;
 import com.example.vivizip.ocr.service.OcrService;
 import com.example.vivizip.security.user.CustomUserDetails;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,7 +25,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 @Tag(name = "OCR", description = "CLOVA OCR API 엔드포인트")
@@ -32,8 +33,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OcrController {
 
+    private final OcrTextExtractionService ocrTextExtractionService;
+
     private final ClovaOcrClient clovaOcrClient;
     private final OcrService ocrService;
+
 
     @Operation(
             summary = "OCR 원본 응답 반환 // 테스트 api",
@@ -50,7 +54,7 @@ public class OcrController {
     ) throws IOException {
         List<ClovaOcrResponse> responses = new ArrayList<>();
         for (MultipartFile file : files) {
-            responses.add(requestOcr(file));
+            responses.add(ocrTextExtractionService.requestOcr(file));
         }
         return ResponseEntity.ok(responses);
     }
@@ -70,24 +74,7 @@ public class OcrController {
             @Parameter(description = "OCR 처리할 이미지 파일 목록 (jpg, png 등, 여러 장 가능)", required = true)
             @RequestParam("files") List<MultipartFile> files
     ) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < files.size(); i++) {
-            ClovaOcrResponse response = requestOcr(files.get(i));
-
-            if (files.size() > 1) {
-                sb.append("=== 페이지 ").append(i + 1).append(" ===\n");
-            }
-            response.images().forEach(image ->
-                    image.fields().forEach(field -> {
-                        sb.append(field.inferText());
-                        sb.append(Boolean.TRUE.equals(field.lineBreak()) ? "\n" : " ");
-                    })
-            );
-            if (i < files.size() - 1) {
-                sb.append("\n\n");
-            }
-        }
-        return ResponseEntity.ok(sb.toString().trim());
+        return ResponseEntity.ok(ocrTextExtractionService.extractText(files));
     }
 
     @Operation(
@@ -107,7 +94,7 @@ public class OcrController {
     ) throws IOException {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < files.size(); i++) {
-            ClovaOcrResponse response = requestOcr(files.get(i));
+            ClovaOcrResponse response = ocrTextExtractionService.requestOcr(files.get(i));
 
             if (files.size() > 1) {
                 sb.append("=== 페이지 ").append(i + 1).append(" ===\n");
@@ -143,6 +130,7 @@ public class OcrController {
         }
         return ResponseEntity.ok(sb.toString());
     }
+
 
     @Operation(
             summary = "OCR 결과 저장 // 실사용 api",

@@ -5,6 +5,7 @@ public enum S3Folder {
     CHAT("chat"),
     REPORT("report"),
     CONTRACT("contract"),
+    LEASE_DOCUMENT("lease-document");
     MOVE_IN("move-in");
 
     private final String path;
