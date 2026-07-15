@@ -81,6 +81,7 @@ public class DocumentAnalysisService {
         return referenceBaselineRepository.findByLeaseCaseId(leaseCaseId)
                 .<AnalysisResult>map(baseline -> new BuildingLedgerAnalysisResult(
                         r.issuedDate(), r.hasViolation(), r.ownerName(), r.ownershipTransferDate(), r.address(),
+                        r.buildingUse(), r.residential(),
                         matches(r.ownerName(), baseline.getOwnerName()),
                         matches(r.address(), baseline.getPropertyAddress())))
                 .orElse(result);

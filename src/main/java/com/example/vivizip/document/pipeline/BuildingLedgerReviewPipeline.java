@@ -26,6 +26,13 @@ public class BuildingLedgerReviewPipeline implements DocumentAnalysisPipeline<Bu
             3. ownerName: "성명(명칭)" 항목의 사람 이름
             4. ownershipTransferDate: "소유권이전" 옆의 날짜 (YYYY.MM.DD 형식)
             5. address: "도로명주소" 뒤의 전체 주소 (괄호 포함)
+            6. buildingUse: 전유부분 표의 "용도" 항목 값 그대로 (예: "다세대주택"). 문서 하단에 "건축물의 용도분류"
+               같은 법령 별표(참고용 분류 목록)가 함께 OCR되어 있어도 그건 이 건물과 무관한 고정 안내문이므로 무시하고,
+               반드시 전유부분 표의 실제 "용도" 값만 사용한다.
+            7. residential: buildingUse를 아래 기준으로 분류
+               - true: 단독주택, 다중주택, 공동주택, 아파트, 연립주택, 다세대주택, 기숙사
+               - false: 근린생활시설, 업무시설, 오피스텔, 숙박시설, 판매시설 등 그 외 용도
+               - null: buildingUse를 추출하지 못했거나 위 기준으로 판단할 수 없는 경우
             """;
 
     private static final String JSON_SCHEMA = """
@@ -36,9 +43,11 @@ public class BuildingLedgerReviewPipeline implements DocumentAnalysisPipeline<Bu
                 "hasViolation": { "type": "boolean" },
                 "ownerName": { "type": "string" },
                 "ownershipTransferDate": { "type": "string" },
-                "address": { "type": "string" }
+                "address": { "type": "string" },
+                "buildingUse": { "type": "string" },
+                "residential": { "type": ["boolean", "null"] }
               },
-              "required": ["issuedDate", "hasViolation", "ownerName", "ownershipTransferDate", "address"],
+              "required": ["issuedDate", "hasViolation", "ownerName", "ownershipTransferDate", "address", "buildingUse", "residential"],
               "additionalProperties": false
             }
             """;
