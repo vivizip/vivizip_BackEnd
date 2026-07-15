@@ -1,6 +1,7 @@
 package com.example.vivizip.movein.service;
 
 import com.example.vivizip.S3.enums.S3Folder;
+import com.example.vivizip.S3.event.S3DeleteEvent;
 import com.example.vivizip.S3.service.S3Service;
 import com.example.vivizip.common.exception.ErrorStatus;
 import com.example.vivizip.common.exception.GeneralException;
@@ -9,6 +10,7 @@ import com.example.vivizip.movein.entity.MoveInPhoto;
 import com.example.vivizip.movein.entity.MoveInRecord;
 import com.example.vivizip.movein.repository.MoveInRecordRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +24,7 @@ public class MoveInRecordService {
 
     private final MoveInRecordRepository moveInRecordRepository;
     private final S3Service s3Service;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 생성 (memo + defects + 사진 multipart 같이)
     public MoveInRecordResponse create(Long userId, MoveInRecordCreateRequest request,
@@ -72,10 +75,13 @@ public class MoveInRecordService {
                 List<MoveInPhoto> toDelete = record.getPhotos().stream()
                         .filter(p -> request.deletePhotoIds().contains(p.getId()))
                         .toList();
-                toDelete.forEach(photo -> {
-                    s3Service.delete(photo.getS3Key());
-                    record.removePhoto(photo);
-                });
+
+                // S3 key 수집 → DB에서 제거 → 커밋 후 S3 삭제 (순서 중요)
+                List<String> keysToDelete = toDelete.stream()
+                        .map(MoveInPhoto::getS3Key)
+                        .toList();
+                toDelete.forEach(record::removePhoto);
+                eventPublisher.publishEvent(new S3DeleteEvent(keysToDelete));
             }
         }
 
@@ -104,8 +110,12 @@ public class MoveInRecordService {
     public void delete(Long userId, Long id) {
         MoveInRecord record = findAndValidate(userId, id);
 
-        record.getPhotos().forEach(photo -> s3Service.delete(photo.getS3Key()));
+        // S3 key 수집 → DB 삭제 → 커밋 후 S3 삭제 (순서 중요)
+        List<String> keysToDelete = record.getPhotos().stream()
+                .map(MoveInPhoto::getS3Key)
+                .toList();
         moveInRecordRepository.delete(record);
+        eventPublisher.publishEvent(new S3DeleteEvent(keysToDelete));
     }
 
     // ── 내부 검증 ──
