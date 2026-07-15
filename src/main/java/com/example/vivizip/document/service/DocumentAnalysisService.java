@@ -6,11 +6,9 @@ import com.example.vivizip.document.dto.AnalysisResult;
 import com.example.vivizip.document.dto.BuildingLedgerAnalysisResult;
 import com.example.vivizip.document.dto.DocumentAnalysisResponse;
 import com.example.vivizip.document.entity.AnalysisType;
-import com.example.vivizip.document.entity.DocumentAnalysis;
 import com.example.vivizip.document.entity.LeaseCase;
 import com.example.vivizip.document.entity.LeaseDocument;
 import com.example.vivizip.document.pipeline.DocumentAnalysisPipeline;
-import com.example.vivizip.document.repository.DocumentAnalysisRepository;
 import com.example.vivizip.document.repository.LeaseCaseRepository;
 import com.example.vivizip.document.repository.LeaseDocumentRepository;
 import com.example.vivizip.document.repository.ReferenceBaselineRepository;
@@ -19,7 +17,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -34,10 +31,10 @@ public class DocumentAnalysisService {
 
     private final LeaseCaseRepository leaseCaseRepository;
     private final LeaseDocumentRepository leaseDocumentRepository;
-    private final DocumentAnalysisRepository documentAnalysisRepository;
     private final ReferenceBaselineRepository referenceBaselineRepository;
     private final ObjectMapper objectMapper;
     private final List<DocumentAnalysisPipeline<? extends AnalysisResult>> pipelines;
+    private final DocumentAnalysisRecorder recorder;
 
     private Map<AnalysisType, DocumentAnalysisPipeline<? extends AnalysisResult>> pipelinesByType;
 
@@ -47,7 +44,6 @@ public class DocumentAnalysisService {
                 .collect(Collectors.toMap(DocumentAnalysisPipeline::type, Function.identity()));
     }
 
-    @Transactional
     public DocumentAnalysisResponse analyze(Long userId, Long documentId, String ocrText) {
         LeaseDocument document = leaseDocumentRepository.findById(documentId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.DOCUMENT_NOT_FOUND));
@@ -63,23 +59,19 @@ public class DocumentAnalysisService {
             throw new GeneralException(ErrorStatus.DOCUMENT_TYPE_NOT_SUPPORTED);
         }
 
-        document.startAnalyzing();
-        DocumentAnalysis analysis = documentAnalysisRepository.save(DocumentAnalysis.create(documentId, analysisType));
-        analysis.start();
+        Long leaseCaseId = document.getLeaseCaseId();
+        Long analysisId = recorder.start(documentId, analysisType);
 
         AnalysisResult result;
         try {
             result = pipeline.analyze(ocrText);
-            result = applyReferenceCheck(document.getLeaseCaseId(), analysisType, result);
+            result = applyReferenceCheck(leaseCaseId, analysisType, result);
         } catch (GeneralException e) {
-            analysis.fail(e.getMessage());
-            document.failAnalysis(e.getMessage());
+            recorder.fail(documentId, analysisId, e.getMessage());
             throw e;
         }
 
-        analysis.complete(toJson(result), null);
-        document.completeAnalysis();
-        return new DocumentAnalysisResponse(analysis.getId(), analysisType, analysis.getStatus(), result, null);
+        return recorder.complete(documentId, analysisId, analysisType, result, toJson(result));
     }
 
     private AnalysisResult applyReferenceCheck(Long leaseCaseId, AnalysisType analysisType, AnalysisResult result) {

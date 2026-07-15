@@ -69,11 +69,10 @@ public class BuildingLedgerReviewPipeline implements DocumentAnalysisPipeline<Bu
     }
 
     private String preprocess(String rawText) {
-        String trimmed = rawText.strip();
-        if (trimmed.isEmpty()) {
+        if (rawText == null || rawText.isBlank()) {
             throw new GeneralException(ErrorStatus.DOCUMENT_TEXT_EMPTY);
         }
-        return trimmed.replaceAll("[ \\t]+", " ");
+        return rawText.strip().replaceAll("[ \\t]+", " ");
     }
 
     private String buildUserPrompt(String buildingLedgerText) {
