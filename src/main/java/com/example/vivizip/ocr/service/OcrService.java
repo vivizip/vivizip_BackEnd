@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -55,22 +56,60 @@ public class OcrService {
         for (int pageIndex = 0; pageIndex < responses.size(); pageIndex++) {
             ClovaOcrResponse response = responses.get(pageIndex);
             for (ClovaOcrResponse.Image image : response.images()) {
-                if (image.fields() == null) continue;
+                if (image.fields() == null || image.fields().isEmpty()) continue;
+
+                // lineBreak 기준으로 필드를 줄 단위로 묶기
+                List<List<ClovaOcrResponse.Field>> lines = new ArrayList<>();
+                List<ClovaOcrResponse.Field> currentLine = new ArrayList<>();
                 for (ClovaOcrResponse.Field field : image.fields()) {
-                    if (field.inferText() != null && field.inferText().contains(keyword)) {
-                        List<KeywordSearchResponse.Vertex> vertices = List.of();
-                        if (field.boundingPoly() != null && field.boundingPoly().vertices() != null) {
-                            vertices = field.boundingPoly().vertices().stream()
-                                    .map(v -> new KeywordSearchResponse.Vertex(v.x(), v.y()))
-                                    .toList();
-                        }
-                        matches.add(new KeywordSearchResponse.MatchResult(pageIndex, field.inferText(), vertices));
+                    currentLine.add(field);
+                    if (Boolean.TRUE.equals(field.lineBreak())) {
+                        lines.add(currentLine);
+                        currentLine = new ArrayList<>();
+                    }
+                }
+                if (!currentLine.isEmpty()) {
+                    lines.add(currentLine);
+                }
+
+                // 줄 단위로 합친 텍스트에서 키워드 검색
+                for (List<ClovaOcrResponse.Field> line : lines) {
+                    String lineText = line.stream()
+                            .map(f -> f.inferText() != null ? f.inferText() : "")
+                            .collect(Collectors.joining(" "))
+                            .trim();
+                    if (lineText.contains(keyword)) {
+                        matches.add(new KeywordSearchResponse.MatchResult(
+                                pageIndex, lineText, mergeVertices(line)));
                     }
                 }
             }
         }
 
         return new KeywordSearchResponse(keyword, matches.size(), matches);
+    }
+
+    // 여러 필드의 bounding box를 하나로 합치기 (min/max 좌표)
+    private List<KeywordSearchResponse.Vertex> mergeVertices(List<ClovaOcrResponse.Field> fields) {
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+
+        for (ClovaOcrResponse.Field field : fields) {
+            if (field.boundingPoly() == null || field.boundingPoly().vertices() == null) continue;
+            for (ClovaOcrResponse.Vertex v : field.boundingPoly().vertices()) {
+                if (v.x() != null) { minX = Math.min(minX, v.x()); maxX = Math.max(maxX, v.x()); }
+                if (v.y() != null) { minY = Math.min(minY, v.y()); maxY = Math.max(maxY, v.y()); }
+            }
+        }
+
+        if (minX == Double.MAX_VALUE) return List.of();
+
+        return List.of(
+                new KeywordSearchResponse.Vertex(minX, minY), // top-left
+                new KeywordSearchResponse.Vertex(maxX, minY), // top-right
+                new KeywordSearchResponse.Vertex(maxX, maxY), // bottom-right
+                new KeywordSearchResponse.Vertex(minX, maxY)  // bottom-left
+        );
     }
 
     private ClovaOcrResponse requestOcr(MultipartFile file) throws IOException {
