@@ -4,7 +4,8 @@ public enum S3Folder {
     PROFILE("profile"),
     CHAT("chat"),
     REPORT("report"),
-    CONTRACT("contract");
+    CONTRACT("contract"),
+    LEASE_DOCUMENT("lease-document");
 
     private final String path;
     S3Folder(String path) { this.path = path; }

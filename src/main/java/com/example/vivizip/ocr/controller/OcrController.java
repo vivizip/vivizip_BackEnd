@@ -1,8 +1,7 @@
 package com.example.vivizip.ocr.controller;
 
-import com.example.vivizip.ocr.client.ClovaOcrClient;
-import com.example.vivizip.ocr.dto.ClovaOcrRequest;
 import com.example.vivizip.ocr.dto.ClovaOcrResponse;
+import com.example.vivizip.ocr.service.OcrTextExtractionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,19 +17,15 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 @Tag(name = "OCR", description = "CLOVA OCR API 엔드포인트")
 @RestController
 @RequestMapping("/api/ocr")
+@RequiredArgsConstructor
 public class OcrController {
 
-    private final ClovaOcrClient clovaOcrClient;
-
-    public OcrController(ClovaOcrClient clovaOcrClient) {
-        this.clovaOcrClient = clovaOcrClient;
-    }
+    private final OcrTextExtractionService ocrTextExtractionService;
 
     @Operation(
             summary = "OCR 원본 응답 반환",
@@ -46,7 +42,7 @@ public class OcrController {
     ) throws IOException {
         List<ClovaOcrResponse> responses = new ArrayList<>();
         for (MultipartFile file : files) {
-            responses.add(requestOcr(file));
+            responses.add(ocrTextExtractionService.requestOcr(file));
         }
         return ResponseEntity.ok(responses);
     }
@@ -66,24 +62,7 @@ public class OcrController {
             @Parameter(description = "OCR 처리할 이미지 파일 목록 (jpg, png 등, 여러 장 가능)", required = true)
             @RequestParam("files") List<MultipartFile> files
     ) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < files.size(); i++) {
-            ClovaOcrResponse response = requestOcr(files.get(i));
-
-            if (files.size() > 1) {
-                sb.append("=== 페이지 ").append(i + 1).append(" ===\n");
-            }
-            response.images().forEach(image ->
-                    image.fields().forEach(field -> {
-                        sb.append(field.inferText());
-                        sb.append(Boolean.TRUE.equals(field.lineBreak()) ? "\n" : " ");
-                    })
-            );
-            if (i < files.size() - 1) {
-                sb.append("\n\n");
-            }
-        }
-        return ResponseEntity.ok(sb.toString().trim());
+        return ResponseEntity.ok(ocrTextExtractionService.extractText(files));
     }
 
     @Operation(
@@ -103,7 +82,7 @@ public class OcrController {
     ) throws IOException {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < files.size(); i++) {
-            ClovaOcrResponse response = requestOcr(files.get(i));
+            ClovaOcrResponse response = ocrTextExtractionService.requestOcr(files.get(i));
 
             if (files.size() > 1) {
                 sb.append("=== 페이지 ").append(i + 1).append(" ===\n");
@@ -138,17 +117,5 @@ public class OcrController {
             }
         }
         return ResponseEntity.ok(sb.toString());
-    }
-
-    private ClovaOcrResponse requestOcr(MultipartFile file) throws IOException {
-        String base64 = Base64.getEncoder().encodeToString(file.getBytes());
-        String format = extractFormat(file.getOriginalFilename());
-        ClovaOcrRequest request = ClovaOcrRequest.ofSingleImage(format, base64);
-        return clovaOcrClient.callOcr(request);
-    }
-
-    private String extractFormat(String filename) {
-        if (filename == null || !filename.contains(".")) return "jpg";
-        return filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
     }
 }
