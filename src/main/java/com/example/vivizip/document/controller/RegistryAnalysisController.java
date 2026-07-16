@@ -1,7 +1,7 @@
 package com.example.vivizip.document.controller;
 
 import com.example.vivizip.document.dto.DocumentAnalysisRequest;
-import com.example.vivizip.document.dto.RegistryAnalysisResult;
+import com.example.vivizip.document.dto.RegistryAnalysisResponse;
 import com.example.vivizip.document.service.RegistryAnalysisService;
 import com.example.vivizip.ocr.service.OcrService;
 import com.example.vivizip.security.user.CustomUserDetails;
@@ -40,7 +40,7 @@ public class RegistryAnalysisController {
             @ApiResponse(responseCode = "500", description = "AI 분석 실패")
     })
     @PostMapping("/api/documents/{documentId}/analysis/registry")
-    public RegistryAnalysisResult analyze(
+    public RegistryAnalysisResponse analyze(
             @AuthenticationPrincipal CustomUserDetails user,
             @Parameter(description = "분석할 서류(lease_document) ID") @PathVariable Long documentId,
             @Valid @RequestBody DocumentAnalysisRequest request
@@ -63,7 +63,7 @@ public class RegistryAnalysisController {
             @ApiResponse(responseCode = "500", description = "OCR 또는 AI 분석 실패")
     })
     @PostMapping(value = "/api/lease-cases/{leaseCaseId}/analysis/registry/image", consumes = "multipart/form-data")
-    public RegistryAnalysisResult analyzeFromImage(
+    public RegistryAnalysisResponse analyzeFromImage(
             @AuthenticationPrincipal CustomUserDetails user,
             @Parameter(description = "계약 건(lease_case) ID") @PathVariable Long leaseCaseId,
             @Parameter(description = "등기부등본 이미지 파일 (jpg, png 등, 여러 장 가능)", required = true)
