@@ -30,7 +30,30 @@ public class DocumentUploadController {
             description = "등기부등본 이미지를 업로드하면 OCR → AI 분석을 한 번에 처리합니다. " +
                     "leaseCaseId로 기존 등기부 서류가 있으면 재사용하고, 없으면 자동 생성합니다. " +
                     "여러 장 업로드 시 페이지를 합쳐서 분석합니다. " +
-                    "분석 결과는 reference_baseline에 저장되어 이후 건축물대장 교차검증에 활용됩니다."
+                    "분석 결과는 reference_baseline에 저장되어 이후 건축물대장 교차검증에 활용됩니다.\n\n" +
+                    "**[200 응답 필드]**\n\n" +
+                    "**analysis** (등기부 분석 결과)\n" +
+                    "- `propertyAddress` : 부동산 주소 (집합건물은 동·호수 포함)\n" +
+                    "- `ownerName` : 등기부상 소유자명\n" +
+                    "- `registeredAt` : 소유권 등기 접수일 (YYYY.MM.DD)\n" +
+                    "- `issuedAt` : 등기부 발행일 또는 열람일 (YYYY.MM.DD)\n" +
+                    "- `hasMortgage` : 근저당권 존재 여부\n" +
+                    "- `mortgageMaximumClaimAmount` : 근저당 채권최고액 합산 (원 단위, 없으면 null)\n" +
+                    "- `buildingUsage` : 건물 용도 (예: 아파트, 도시형생활주택, 없으면 null)\n" +
+                    "- `isResidential` : 주거용 건물 여부\n" +
+                    "- `hasSummaryPage` : 주요 등기사항 요약 페이지 포함 여부\n" +
+                    "- `riskFlags` : 위험 항목 플래그\n" +
+                    "  - `provisionalRegistration` : 가등기\n" +
+                    "  - `trust` : 신탁\n" +
+                    "  - `seizure` : 압류\n" +
+                    "  - `provisionalSeizure` : 가압류\n" +
+                    "  - `auctionStart` : 경매개시결정\n" +
+                    "  - `leaseRegistration` : 임차권등기명령\n" +
+                    "  - `jeonseRight` : 전세권\n\n" +
+                    "**riskExplanations** (위험 항목 외국인 설명, riskFlags 중 true인 항목만 포함, 없으면 빈 배열)\n" +
+                    "- `riskType` : 위험 항목 enum명 (예: SEIZURE)\n" +
+                    "- `term` : 한국어 법률 용어 (예: 압류)\n" +
+                    "- `explanation` : 세입자 국적 맞춤 한국어 설명"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "분석 성공"),
