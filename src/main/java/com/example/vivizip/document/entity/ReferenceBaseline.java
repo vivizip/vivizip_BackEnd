@@ -33,6 +33,16 @@ public class ReferenceBaseline extends BaseEntity {
     @Column(name = "mortgage_maximum_claim_amount")
     private Long mortgageMaximumClaimAmount;
 
+    // 중개대상물 도로명 주소
+    @Column(name = "brokerage_document_address", length = 500)
+    private String brokerageDocumentAddress;
+
+    @Column(name = "deposit")
+    private Long deposit;
+
+    @Column(name = "monthly_rent")
+    private Long monthlyRent;
+
     private ReferenceBaseline(Long leaseCaseId, String ownerName, String propertyAddress,
                                boolean hasMortgage, Long mortgageMaximumClaimAmount) {
         if (!hasMortgage && mortgageMaximumClaimAmount != null) {
@@ -58,5 +68,11 @@ public class ReferenceBaseline extends BaseEntity {
         this.propertyAddress = propertyAddress;
         this.hasMortgage = hasMortgage;
         this.mortgageMaximumClaimAmount = mortgageMaximumClaimAmount;
+    }
+
+    public void updateFromBrokerageDocument(String brokerageDocumentAddress, Long deposit, Long monthlyRent) {
+        this.brokerageDocumentAddress = brokerageDocumentAddress;
+        this.deposit = deposit;
+        this.monthlyRent = monthlyRent;
     }
 }
