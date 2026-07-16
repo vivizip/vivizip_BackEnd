@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -44,7 +45,19 @@ public class S3Service {
         validate(file, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE);
         String key = generateKey(folder, file.getOriginalFilename());
         putObject(file, key);
-        return toPublicUrl(key);
+        return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
+    }
+
+    // ── public 업로드 후 key 반환 (사진 그룹 등 S3 삭제가 필요한 public 파일) ──
+    public String uploadPublicReturnKey(MultipartFile file, String folder) {
+        validate(file, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE);
+        String key = generateKey(folder, file.getOriginalFilename());
+        putObject(file, key);
+        return key;
+    }
+
+    public String toPublicUrl(String key) {
+        return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
     }
 
     // ── private 업로드 (계약서/서류) → key만 반환 (DB에 저장) ──
@@ -53,6 +66,15 @@ public class S3Service {
         String key = generateKey(folder, file.getOriginalFilename());
         putObject(file, key);
         return key;  // URL 아님! key만. 조회 시 presigned 발급
+    }
+
+    // ── 업로드 도중 실패 시 이미 올라간 객체 정리용 ──
+    public void delete(String key) {
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
+        } catch (SdkException e) {
+            log.warn("S3 정리 실패 (key={}): {}", key, e.getMessage());
+        }
     }
 
     // ── presigned URL 발급 (private 파일 조회용, 5분 유효) ──
@@ -110,7 +132,4 @@ public class S3Service {
         return folder + "/" + UUID.randomUUID() + ext;
     }
 
-    private String toPublicUrl(String key) {
-        return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
-    }
 }
