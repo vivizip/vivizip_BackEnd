@@ -31,10 +31,28 @@ public class OcrService {
     private final ObjectMapper objectMapper;
 
     public String extractText(List<MultipartFile> files) throws IOException {
+        List<ClovaOcrResponse> responses = new ArrayList<>();
+        for (MultipartFile file : files) {
+            responses.add(requestOcr(file));
+        }
+        return buildText(responses);
+    }
+
+    // 저장된 OCR 결과에서 텍스트를 뽑는다. 키워드 박스 검색(searchKeyword)과 같은 OCR 결과를 쓰므로
+    // AI 값 추출용 텍스트를 얻으려고 CLOVA OCR을 다시 호출하지 않아도 된다.
+    @Transactional(readOnly = true)
+    public String getText(Long userId, Long id) throws IOException {
+        OcrResult result = findOwnedResult(userId, id);
+        List<ClovaOcrResponse> responses = objectMapper.readValue(
+                result.getRawJson(), new TypeReference<>() {});
+        return buildText(responses);
+    }
+
+    private String buildText(List<ClovaOcrResponse> responses) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < files.size(); i++) {
-            ClovaOcrResponse response = requestOcr(files.get(i));
-            if (files.size() > 1) {
+        for (int i = 0; i < responses.size(); i++) {
+            ClovaOcrResponse response = responses.get(i);
+            if (responses.size() > 1) {
                 sb.append("=== 페이지 ").append(i + 1).append(" ===\n");
             }
             response.images().forEach(image -> {
@@ -44,7 +62,7 @@ public class OcrService {
                     sb.append(Boolean.TRUE.equals(field.lineBreak()) ? "\n" : " ");
                 });
             });
-            if (i < files.size() - 1) sb.append("\n\n");
+            if (i < responses.size() - 1) sb.append("\n\n");
         }
         return sb.toString().trim();
     }
@@ -62,11 +80,7 @@ public class OcrService {
 
     @Transactional(readOnly = true)
     public KeywordSearchResponse searchKeyword(Long userId, Long id, String keyword) throws IOException {
-        OcrResult result = ocrResultRepository.findById(id)
-                .orElseThrow(() -> new GeneralException(ErrorStatus.OCR_RESULT_NOT_FOUND));
-        if (!result.getUserId().equals(userId)) {
-            throw new GeneralException(ErrorStatus.OCR_RESULT_FORBIDDEN);
-        }
+        OcrResult result = findOwnedResult(userId, id);
 
         List<ClovaOcrResponse> responses = objectMapper.readValue(
                 result.getRawJson(), new TypeReference<>() {});
@@ -129,6 +143,15 @@ public class OcrService {
                 new KeywordSearchResponse.Vertex(maxX, maxY), // bottom-right
                 new KeywordSearchResponse.Vertex(minX, maxY)  // bottom-left
         );
+    }
+
+    private OcrResult findOwnedResult(Long userId, Long id) {
+        OcrResult result = ocrResultRepository.findById(id)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.OCR_RESULT_NOT_FOUND));
+        if (!result.getUserId().equals(userId)) {
+            throw new GeneralException(ErrorStatus.OCR_RESULT_FORBIDDEN);
+        }
+        return result;
     }
 
     private ClovaOcrResponse requestOcr(MultipartFile file) throws IOException {

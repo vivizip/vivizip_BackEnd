@@ -26,9 +26,12 @@ public class LeaseDocumentUploadService {
     private final DocumentAnalysisService documentAnalysisService;
     private final LeaseDocumentUploadRecorder recorder;
 
-    public BuildingLedgerAnalysisResponse uploadAndAnalyzeBuildingLedger(Long userId, Long leaseCaseId, List<MultipartFile> files) throws IOException {
+    // 건축물대장은 1쪽(표제부)에 분석에 필요한 정보가 다 있고, 뒷장 변동사항(이력)에는
+    // "위법건축물 표기/해제" 같은 과거 이력 문구가 섞여 있어 hasViolation 같은 판단을 흐릴 수 있어서
+    // 여러 장이 아니라 1장만 받는다.
+    public BuildingLedgerAnalysisResponse uploadAndAnalyzeBuildingLedger(Long userId, Long leaseCaseId, MultipartFile file) throws IOException {
         return BuildingLedgerAnalysisResponse.from(
-                uploadAndAnalyze(userId, leaseCaseId, LeaseDocumentType.BUILDING_LEDGER, files));
+                uploadAndAnalyze(userId, leaseCaseId, LeaseDocumentType.BUILDING_LEDGER, List.of(file)));
     }
 
     // 서류 타입별 결과 DTO가 다 달라서 컨트롤러는 타입별 엔드포인트로 분리하되,
