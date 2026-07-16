@@ -92,17 +92,6 @@ public class S3Service {
         return s3Presigner.presignGetObject(presignRequest).url().toString();
     }
 
-    // ── 삭제 ──
-    public void delete(String key) {
-        try {
-            s3Client.deleteObject(b -> b.bucket(bucket).key(key));
-            log.info("S3 삭제 완료: {}", key);
-        } catch (SdkException e) {
-            log.error("S3 삭제 실패: {}", e.getMessage());
-            throw new RuntimeException("S3 삭제 실패: " + e.getMessage(), e);
-        }
-    }
-
     // ── 내부 유틸 ──
     private void putObject(MultipartFile file, String key) {
         PutObjectRequest request = PutObjectRequest.builder()

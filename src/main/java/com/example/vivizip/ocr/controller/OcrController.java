@@ -1,5 +1,7 @@
 package com.example.vivizip.ocr.controller;
 
+import com.example.vivizip.ocr.client.ClovaOcrClient;
+import com.example.vivizip.ocr.dto.ClovaOcrRequest;
 import com.example.vivizip.ocr.dto.ClovaOcrResponse;
 
 import com.example.vivizip.ocr.service.OcrTextExtractionService;
@@ -25,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @Tag(name = "OCR", description = "CLOVA OCR API 엔드포인트")
