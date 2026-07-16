@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-@Tag(name = "OCR", description = "CLOVA OCR API 엔드포인트")
+@Tag(name = "OCR", description = "[테스트] CLOVA OCR API 엔드포인트")
 @RestController
 @RequestMapping("/api/ocr")
 @RequiredArgsConstructor
@@ -43,7 +43,7 @@ public class OcrController {
 
 
     @Operation(
-            summary = "OCR 원본 응답 반환 // 테스트 api",
+            summary = "[테스트] OCR 원본 응답 반환",
             description = "이미지를 1장 이상 업로드하면 각 페이지의 CLOVA OCR API 응답을 리스트로 반환합니다. 응답 구조 확인용입니다."
     )
     @ApiResponses({
@@ -63,7 +63,7 @@ public class OcrController {
     }
 
     @Operation(
-            summary = "OCR 텍스트 추출",
+            summary = "[테스트] OCR 텍스트 추출",
             description = "이미지를 1장 이상 업로드하면 인식된 텍스트를 페이지 구분자(=== 페이지 N ===)와 함께 하나의 문자열로 반환합니다."
     )
     @ApiResponses({
@@ -81,7 +81,7 @@ public class OcrController {
     }
 
     @Operation(
-            summary = "OCR 표 추출",
+            summary = "[테스트] OCR 표 추출",
             description = "이미지를 1장 이상 업로드하면 각 페이지에서 감지된 표(Table)의 셀 내용을 [행,열] 형식으로 반환합니다. 표가 없을 경우 '표 없음' 메시지를 반환합니다."
     )
     @ApiResponses({
@@ -136,7 +136,7 @@ public class OcrController {
 
 
     @Operation(
-            summary = "OCR 결과 저장 // 실사용 api",
+            summary = "[테스트] OCR 결과 저장",
             description = "이미지를 1장 이상 업로드하면 CLOVA OCR을 수행하고 결과를 DB에 저장합니다. 저장된 OCR 결과 ID를 반환합니다."
     )
     @ApiResponses({
@@ -153,7 +153,7 @@ public class OcrController {
     }
 
     @Operation(
-            summary = "OCR 결과 키워드 좌표 검색",
+            summary = "[테스트] OCR 결과 키워드 좌표 검색",
             description = "저장된 OCR 결과에서 특정 키워드가 포함된 텍스트 필드를 검색하고 해당 좌표(boundingPoly)를 반환합니다."
     )
     @ApiResponses({

@@ -25,7 +25,7 @@ public class DocumentAnalysisController {
     private final BuildingLedgerReviewPipeline buildingLedgerReviewPipeline;
 
     @Operation(
-            summary = "서류 AI 분석 요청",
+            summary = "[테스트] 서류 AI 분석 요청",
             description = "OCR로 이미 추출된 서류 텍스트(ocrText)를 받아 서류 타입(document_type)에 맞는 AI 파이프라인으로 분석하고 결과를 저장합니다.\n\n" +
                     "등기부와 대조가 필요한 서류(현재 건축물대장)는 reference_baseline과 소유자명/주소를 비교해 ownerMatched/addressMatched를 함께 반환합니다.\n\n" +
                     "현재는 LEASE_CONTRACT, BUILDING_LEDGER 타입만 지원하며, 그 외 타입은 400(DOCUMENT_TYPE_NOT_SUPPORTED)을 반환합니다."
@@ -40,7 +40,7 @@ public class DocumentAnalysisController {
     }
 
     @Operation(
-            summary = "[디버그] 건축물대장 AI 분석 직접 실행",
+            summary = "[테스트] 건축물대장 AI 분석 직접 실행",
             description = "documentId/DB 저장 없이 OCR 텍스트를 요청 바디에 그대로(순수 텍스트) 붙여넣어 건축물대장 pipeline만 실행합니다. " +
                     "JSON이 아니라 순수 텍스트라 줄바꿈을 이스케이프할 필요 없이 그냥 복붙하면 됩니다. " +
                     "referenceOwnerName/referenceAddress 쿼리 파라미터를 비워두면 대조 없이 추출 결과만 반환합니다." +
