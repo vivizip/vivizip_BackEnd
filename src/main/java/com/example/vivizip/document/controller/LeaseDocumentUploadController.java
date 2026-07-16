@@ -85,8 +85,10 @@ public class LeaseDocumentUploadController {
                     - `*.regions`: 프론트에서 원본 이미지 위에 그릴 하이라이트 박스 목록 (좌표는 CLOVA OCR이 반환한 픽셀 값 그대로)
                     - `brokerageFee`: "⑬ 중개보수" 항목의 중개보수 금액(원). 부가세 포함 "계" 금액이 아님. 못 찾으면 null
 
-                    등기부(reference_baseline)가 이미 등록되어 있으면, 이 문서에서 뽑은 소재지·보증금·월세도
+                    등기부(reference_baseline)가 이미 등록되어 있으면, 이 문서에서 뽑은 매도인·소재지·보증금·월세도
                     reference_baseline에 함께 저장됩니다(응답에는 포함되지 않음).
+                    업로드한 파일은 S3에 저장되고, 건축물대장/등기부와 동일하게 lease_document/document_analysis에도
+                    분석 상태와 결과가 기록됩니다.
                     """
     )
     @ApiResponse(
