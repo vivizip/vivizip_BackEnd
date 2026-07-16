@@ -1,5 +1,6 @@
 package com.example.vivizip.matching.service;
 
+import com.example.vivizip.chat.service.ChatRoomService;
 import com.example.vivizip.common.exception.ErrorStatus;
 import com.example.vivizip.common.exception.GeneralException;
 import com.example.vivizip.matching.dto.MatchResponse;
@@ -38,6 +39,7 @@ public class MatchingServiceImpl implements MatchingService {
     private final UserRepository userRepository;
     private final TimeSlotRepository timeSlotRepository;
     private final MatchRepository matchRepository;
+    private final ChatRoomService chatRoomService;
 
     @Override
     @Transactional
@@ -93,7 +95,8 @@ public class MatchingServiceImpl implements MatchingService {
 
         User supporter = pickBestSupporter(student, candidates);
         Match match = matchRepository.save(Match.createMatched(student.getId(), supporter.getId()));
-        return MatchResponse.of(match, student, supporter, student.getId());
+        Long chatRoomId = chatRoomService.createForMatch(match.getId(), student.getId(), supporter.getId());
+        return MatchResponse.of(match, student, supporter, student.getId(), chatRoomId);
     }
 
     @Override
@@ -107,7 +110,8 @@ public class MatchingServiceImpl implements MatchingService {
 
         User student = getUser(match.getStudentId());
         User supporter = getUser(match.getSupporterId());
-        return MatchResponse.of(match, student, supporter, userId);
+        Long chatRoomId = chatRoomService.findRoomIdByMatchId(match.getId());
+        return MatchResponse.of(match, student, supporter, userId, chatRoomId);
     }
 
     @Override
@@ -129,6 +133,8 @@ public class MatchingServiceImpl implements MatchingService {
         if (match.getStatus() != MatchStatus.MATCHED) {
             throw new GeneralException(ErrorStatus.MATCH_STATUS_NOT_MATCHED);
         }
+
+        chatRoomService.closeByMatchId(matchId);
 
         match.cancel(userId, request != null ? request.reason() : null);
         requester.increaseRematchCount();
@@ -152,7 +158,8 @@ public class MatchingServiceImpl implements MatchingService {
         }
 
         Match newMatch = matchRepository.save(Match.createMatched(student.getId(), supporter.getId()));
-        return MatchResponse.of(newMatch, student, supporter, userId);
+        Long chatRoomId = chatRoomService.createForMatch(newMatch.getId(), student.getId(), supporter.getId());
+        return MatchResponse.of(newMatch, student, supporter, userId, chatRoomId);
     }
 
     private void replaceTimeSlots(Long userId, List<TimeSlotRequest> requestedSlots) {
