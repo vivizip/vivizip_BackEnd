@@ -30,6 +30,25 @@ public class OcrService {
     private final OcrResultRepository ocrResultRepository;
     private final ObjectMapper objectMapper;
 
+    public String extractText(List<MultipartFile> files) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < files.size(); i++) {
+            ClovaOcrResponse response = requestOcr(files.get(i));
+            if (files.size() > 1) {
+                sb.append("=== 페이지 ").append(i + 1).append(" ===\n");
+            }
+            response.images().forEach(image -> {
+                if (image.fields() == null) return;
+                image.fields().forEach(field -> {
+                    sb.append(field.inferText() != null ? field.inferText() : "");
+                    sb.append(Boolean.TRUE.equals(field.lineBreak()) ? "\n" : " ");
+                });
+            });
+            if (i < files.size() - 1) sb.append("\n\n");
+        }
+        return sb.toString().trim();
+    }
+
     @Transactional
     public OcrSaveResponse save(Long userId, List<MultipartFile> files) throws IOException {
         List<ClovaOcrResponse> responses = new ArrayList<>();

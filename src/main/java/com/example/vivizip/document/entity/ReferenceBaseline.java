@@ -35,6 +35,9 @@ public class ReferenceBaseline extends BaseEntity {
 
     private ReferenceBaseline(Long leaseCaseId, String ownerName, String propertyAddress,
                                boolean hasMortgage, Long mortgageMaximumClaimAmount) {
+        if (!hasMortgage && mortgageMaximumClaimAmount != null) {
+            throw new IllegalArgumentException("hasMortgage가 false이면 mortgageMaximumClaimAmount는 null이어야 합니다.");
+        }
         this.leaseCaseId = leaseCaseId;
         this.ownerName = ownerName;
         this.propertyAddress = propertyAddress;
@@ -48,6 +51,9 @@ public class ReferenceBaseline extends BaseEntity {
     }
 
     public void update(String ownerName, String propertyAddress, boolean hasMortgage, Long mortgageMaximumClaimAmount) {
+        if (!hasMortgage && mortgageMaximumClaimAmount != null) {
+            throw new IllegalArgumentException("hasMortgage가 false이면 mortgageMaximumClaimAmount는 null이어야 합니다.");
+        }
         this.ownerName = ownerName;
         this.propertyAddress = propertyAddress;
         this.hasMortgage = hasMortgage;

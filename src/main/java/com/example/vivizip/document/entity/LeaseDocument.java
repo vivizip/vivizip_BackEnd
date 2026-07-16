@@ -27,6 +27,9 @@ public class LeaseDocument {
     @Column(name = "document_type", nullable = false, length = 50)
     private LeaseDocumentType documentType;
 
+    @Column(name = "file_url", length = 500)
+    private String fileUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private LeaseDocumentStatus status;
@@ -38,11 +41,6 @@ public class LeaseDocument {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @Version
-    private Long version;
-
-    private static final int FAILURE_REASON_MAX_LENGTH = 500;
-
     private LeaseDocument(Long leaseCaseId, LeaseDocumentType documentType) {
         this.leaseCaseId = leaseCaseId;
         this.documentType = documentType;
@@ -51,6 +49,13 @@ public class LeaseDocument {
 
     public static LeaseDocument create(Long leaseCaseId, LeaseDocumentType documentType) {
         return new LeaseDocument(leaseCaseId, documentType);
+    }
+
+    // 이미지 업로드+분석 일체형 흐름에서 사용 (별도 upload 단계 없음)
+    public static LeaseDocument createUploaded(Long leaseCaseId, LeaseDocumentType documentType) {
+        LeaseDocument doc = new LeaseDocument(leaseCaseId, documentType);
+        doc.status = LeaseDocumentStatus.UPLOADED;
+        return doc;
     }
 
     public void upload() {
@@ -85,13 +90,7 @@ public class LeaseDocument {
         if (status != LeaseDocumentStatus.ANALYZING) {
             throw new IllegalStateException("ANALYZING 상태에서만 분석 실패 처리를 할 수 있습니다. 현재 상태: " + status);
         }
-        this.failureReason = truncate(failureReason);
+        this.failureReason = failureReason;
         this.status = LeaseDocumentStatus.ANALYSIS_FAILED;
-    }
-
-    private String truncate(String value) {
-        return value.length() <= FAILURE_REASON_MAX_LENGTH
-                ? value
-                : value.substring(0, FAILURE_REASON_MAX_LENGTH - 3) + "...";
     }
 }
