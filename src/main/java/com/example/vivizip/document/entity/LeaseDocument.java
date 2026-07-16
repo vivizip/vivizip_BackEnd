@@ -27,9 +27,6 @@ public class LeaseDocument {
     @Column(name = "document_type", nullable = false, length = 50)
     private LeaseDocumentType documentType;
 
-    @Column(name = "file_url", length = 500)
-    private String fileUrl;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private LeaseDocumentStatus status;
@@ -40,6 +37,11 @@ public class LeaseDocument {
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Version
+    private Long version;
+
+    private static final int FAILURE_REASON_MAX_LENGTH = 500;
 
     private LeaseDocument(Long leaseCaseId, LeaseDocumentType documentType) {
         this.leaseCaseId = leaseCaseId;
@@ -62,11 +64,6 @@ public class LeaseDocument {
         if (fileUrl == null || fileUrl.isBlank()) {
             throw new IllegalArgumentException("fileUrl은 비어 있을 수 없습니다.");
         }
-        if (status != LeaseDocumentStatus.ISSUING) {
-            throw new IllegalStateException("ISSUING 상태에서만 업로드할 수 있습니다. 현재 상태: " + status);
-        }
-        this.fileUrl = fileUrl;
-        this.status = LeaseDocumentStatus.UPLOADED;
     }
 
     public void startAnalyzing() {
@@ -94,7 +91,13 @@ public class LeaseDocument {
         if (status != LeaseDocumentStatus.ANALYZING) {
             throw new IllegalStateException("ANALYZING 상태에서만 분석 실패 처리를 할 수 있습니다. 현재 상태: " + status);
         }
-        this.failureReason = failureReason;
+        this.failureReason = truncate(failureReason);
         this.status = LeaseDocumentStatus.ANALYSIS_FAILED;
+    }
+
+    private String truncate(String value) {
+        return value.length() <= FAILURE_REASON_MAX_LENGTH
+                ? value
+                : value.substring(0, FAILURE_REASON_MAX_LENGTH - 3) + "...";
     }
 }
