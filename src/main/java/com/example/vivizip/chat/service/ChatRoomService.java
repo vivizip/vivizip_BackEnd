@@ -6,6 +6,7 @@ import com.example.vivizip.chat.dto.ChatMessageSliceResponse;
 import com.example.vivizip.chat.dto.ChatRoomResponse;
 import com.example.vivizip.chat.entity.ChatMessage;
 import com.example.vivizip.chat.entity.ChatRoom;
+import com.example.vivizip.chat.enums.ChatRoomStatus;
 import com.example.vivizip.chat.enums.MessageType;
 import com.example.vivizip.chat.repository.ChatMessageRepository;
 import com.example.vivizip.chat.repository.ChatRoomRepository;
@@ -66,10 +67,35 @@ public class ChatRoomService {
         return ChatRoomResponse.from(room);
     }
 
-    // 내 방 목록
+    // 매칭 성공 시 채팅방 생성
+    @Transactional
+    public Long createForMatch(Long matchId, Long studentId, Long supporterId) {
+        ChatRoom room = chatRoomRepository.save(
+                ChatRoom.forMatch(matchId, supporterId, studentId));
+        return room.getId();
+    }
+
+    // 매칭 취소 시 채팅방 닫기
+    @Transactional
+    public void closeByMatchId(Long matchId) {
+        chatRoomRepository.findByMatchId(matchId).ifPresent(room -> {
+            room.close();
+            chatRoomRepository.save(room);
+        });
+    }
+
+    // matchId로 roomId 조회
+    @Transactional(readOnly = true)
+    public Long findRoomIdByMatchId(Long matchId) {
+        return chatRoomRepository.findByMatchId(matchId)
+                .map(ChatRoom::getId)
+                .orElse(null);
+    }
+
+    // 내 활성 방 목록
     @Transactional(readOnly = true)
     public List<ChatRoomResponse> getMyRooms(Long userId) {
-        return chatRoomRepository.findAllByUserId(userId).stream()
+        return chatRoomRepository.findAllByUserIdAndStatus(userId, ChatRoomStatus.ACTIVE).stream()
                 .map(ChatRoomResponse::from)
                 .toList();
     }

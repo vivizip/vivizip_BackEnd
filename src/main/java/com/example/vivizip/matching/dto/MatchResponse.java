@@ -8,6 +8,7 @@ import com.example.vivizip.user.entity.User;
 
 public record MatchResponse(
         Long matchId,
+        Long chatRoomId,
         Long studentId,
         String studentName,
         String studentProfileImage,
@@ -18,10 +19,11 @@ public record MatchResponse(
         Nationality counterpartNationality,
         Gender counterpartGender
 ) {
-    public static MatchResponse of(Match match, User student, User supporter, Long viewerId) {
+    public static MatchResponse of(Match match, User student, User supporter, Long viewerId, Long chatRoomId) {
         User counterpart = viewerId.equals(student.getId()) ? supporter : student;
         return new MatchResponse(
                 match.getId(),
+                chatRoomId,
                 student.getId(),
                 student.getName(),
                 student.getProfileImage(),
