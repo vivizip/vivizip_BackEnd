@@ -122,6 +122,39 @@ public class OcrService {
         return new KeywordSearchResponse(keyword, matches.size(), matches);
     }
 
+    // 필드 단위로 키워드를 검색한다 — 줄 병합 없이 키워드가 포함된 각 field의 boundingPoly만 반환.
+    // 하이라이트 박스를 줄 전체가 아닌 키워드 단어에만 표시할 때 사용한다.
+    // 기존 searchKeyword(줄 병합 union)가 필요한 호출부는 그대로 둔다.
+    @Transactional(readOnly = true)
+    public KeywordSearchResponse searchKeywordByField(Long userId, Long id, String keyword) throws IOException {
+        OcrResult result = findOwnedResult(userId, id);
+        List<ClovaOcrResponse> responses = objectMapper.readValue(result.getRawJson(), new TypeReference<>() {});
+
+        List<KeywordSearchResponse.MatchResult> matches = new ArrayList<>();
+        for (int pageIndex = 0; pageIndex < responses.size(); pageIndex++) {
+            for (ClovaOcrResponse.Image image : responses.get(pageIndex).images()) {
+                if (image.fields() == null) continue;
+                for (ClovaOcrResponse.Field field : image.fields()) {
+                    String text = field.inferText();
+                    if (text != null && text.contains(keyword)) {
+                        matches.add(new KeywordSearchResponse.MatchResult(
+                                pageIndex, text, fieldToVertices(field)));
+                    }
+                }
+            }
+        }
+        return new KeywordSearchResponse(keyword, matches.size(), matches);
+    }
+
+    private List<KeywordSearchResponse.Vertex> fieldToVertices(ClovaOcrResponse.Field field) {
+        if (field.boundingPoly() == null || field.boundingPoly().vertices() == null) return List.of();
+        return field.boundingPoly().vertices().stream()
+                .map(v -> new KeywordSearchResponse.Vertex(
+                        v.x() != null ? v.x() : 0.0,
+                        v.y() != null ? v.y() : 0.0))
+                .toList();
+    }
+
     // 여러 필드의 bounding box를 하나로 합치기 (min/max 좌표)
     private List<KeywordSearchResponse.Vertex> mergeVertices(List<ClovaOcrResponse.Field> fields) {
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;

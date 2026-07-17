@@ -152,7 +152,11 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("존재하지 않거나 로그인 사용자의 임대차 케이스가 아닙니다.")
     LEASE_CASE_NOT_FOUND(NOT_FOUND, 4604, "임대차 케이스를 찾을 수 없습니다."),
     @ExplainError("업로드할 파일이 1개도 없습니다.")
-    DOCUMENT_FILE_EMPTY(BAD_REQUEST, 4605, "업로드할 파일이 없습니다.");
+    DOCUMENT_FILE_EMPTY(BAD_REQUEST, 4605, "업로드할 파일이 없습니다."),
+
+    // lease contract analysis (4610~4619)
+    @ExplainError("재시도를 모두 소진해도 임대차계약서 AI 응답을 구조화된 형식으로 해석하지 못했습니다.")
+    LEASE_CONTRACT_ANALYSIS_FAILED(INTERNAL_SERVER_ERROR, 4610, "임대차계약서 분석에 실패했습니다. 잠시 후 다시 시도해주세요.");
 
 
 

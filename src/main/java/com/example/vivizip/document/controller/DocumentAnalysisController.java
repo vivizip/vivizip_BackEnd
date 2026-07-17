@@ -57,16 +57,23 @@ public class DocumentAnalysisController {
         return new BuildingLedgerAnalysisResult(
                 result.issuedDate(), result.hasViolation(), result.ownerName(), result.ownershipTransferDate(), result.address(),
                 result.buildingUse(), result.residential(),
-                matches(result.ownerName(), referenceOwnerName),
-                matches(result.address(), referenceAddress)
+                ownerMatches(result.ownerName(), referenceOwnerName),
+                addressMatches(result.address(), referenceAddress)
         );
     }
 
+    // 공동명의 cross-match: 양쪽 이름 목록(쉼표 구분)에서 하나라도 교집합이 있으면 true. reference 없으면 null.
+    private Boolean ownerMatches(String extracted, String reference) {
+        if (reference == null || reference.isBlank()) return null;
+        java.util.Set<String> set = java.util.Arrays.stream(extracted == null ? new String[]{""} : extracted.split(","))
+                .map(this::normalize).collect(java.util.stream.Collectors.toSet());
+        return java.util.Arrays.stream(reference.split(","))
+                .map(this::normalize).anyMatch(set::contains);
+    }
+
     // reference 값이 없으면(빈 입력) 비교 자체를 안 한 것이므로 null. 있으면 true/false.
-    private Boolean matches(String extracted, String reference) {
-        if (reference == null || reference.isBlank()) {
-            return null;
-        }
+    private Boolean addressMatches(String extracted, String reference) {
+        if (reference == null || reference.isBlank()) return null;
         return normalize(extracted).equals(normalize(reference));
     }
 

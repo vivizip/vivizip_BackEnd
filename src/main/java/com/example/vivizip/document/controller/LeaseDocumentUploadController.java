@@ -2,7 +2,9 @@ package com.example.vivizip.document.controller;
 
 import com.example.vivizip.document.dto.BuildingLedgerAnalysisResponse;
 import com.example.vivizip.document.dto.중개대상물.BrokerageDocumentAnalysisResponse;
+import com.example.vivizip.document.dto.임대차계약서.LeaseContractAnalysisResponse;
 import com.example.vivizip.document.service.BrokerageDocumentAnalysisService;
+import com.example.vivizip.document.service.LeaseContractAnalysisService;
 import com.example.vivizip.document.service.LeaseDocumentUploadService;
 import com.example.vivizip.security.user.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +30,7 @@ public class LeaseDocumentUploadController {
 
     private final LeaseDocumentUploadService leaseDocumentUploadService;
     private final BrokerageDocumentAnalysisService brokerageDocumentAnalysisService;
+    private final LeaseContractAnalysisService leaseContractAnalysisService;
 
     @Operation(
             summary = "건축물대장 업로드 + OCR + AI 분석 통합 실행",
@@ -87,8 +90,6 @@ public class LeaseDocumentUploadController {
 
                     등기부(reference_baseline)가 이미 등록되어 있으면, 이 문서에서 뽑은 매도인·소재지·보증금·월세도
                     reference_baseline에 함께 저장됩니다(응답에는 포함되지 않음).
-                    업로드한 파일은 S3에 저장되고, 건축물대장/등기부와 동일하게 lease_document/document_analysis에도
-                    분석 상태와 결과가 기록됩니다.
                     """
     )
     @ApiResponse(
@@ -110,5 +111,58 @@ public class LeaseDocumentUploadController {
             @Parameter(description = "업로드할 중개대상물 확인·설명서 파일 목록 (여러 장 가능)", required = true) @RequestParam("files") List<MultipartFile> files
     ) throws IOException {
         return brokerageDocumentAnalysisService.analyze(user.getUserId(), leaseCaseId, files);
+    }
+
+    @Operation(
+            summary = "임대차계약서 업로드 + OCR + AI 분석 통합 실행",
+            description = """
+                    임대차계약서 이미지를 업로드하면 OCR과 AI 분석을 한 번에 실행해 결과를 반환합니다.
+                    중개대상물 확인·설명서가 이미 등록되어 있으면 소유자·주소·보증금·월세 일치 여부를 함께 비교합니다.
+                    분석 결과는 DB에 저장하지 않는 1회성 응답입니다.
+
+                    **basicInfo 필드**
+                    - `matchesBrokerageDocument`: 중개대상물과 소유자·주소가 모두 일치하면 true, 하나라도 다르면 false, 중개대상물 미등록이면 null
+                    - `owner`: AI가 추출한 임대인 이름
+                    - `contractDate`: 계약 체결일 (YYYY.MM.DD)
+                    - `roadAddress`: 소재지 도로명주소 (동·호수 포함)
+                    - `leaseStartDate`: 임대차 기간 시작일 (YYYY.MM.DD)
+                    - `leaseEndDate`: 임대차 기간 종료일 (YYYY.MM.DD)
+                    - `regions`: 소재지·임대인 하이라이트 박스
+
+                    **cost 필드**
+                    - `deposit`: 보증금 (원)
+                    - `monthlyRent`: 월세 (원, 없으면 null)
+                    - `depositMatched`: 중개대상물 보증금과 일치 여부 (중개대상물 미등록이면 null)
+                    - `monthlyRentMatched`: 중개대상물 월세와 일치 여부 (중개대상물 미등록이면 null)
+                    - `depositMessage`: 보증금 불일치 시 세입자가 중개인에게 읽어 말할 확인 질문 (일치하면 null)
+                    - `monthlyRentMessage`: 월세 불일치 시 확인 질문 (일치하면 null)
+                    - `regions`: 보증금·차임 하이라이트 박스
+
+                    **riskyClauses 필드** (위험 특약 배열, 없으면 빈 배열)
+                    - `originalText`: 계약서 원문 그대로
+                    - `reason`: 왜 불리한지 한 문장
+                    - `suggestion`: 어떻게 바꿀지 구체적 문구 제안
+                    - `regions`: 해당 특약 하이라이트 박스
+                    """
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "임대차계약서 업로드 및 분석 성공",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = LeaseContractAnalysisResponse.class)
+            )
+    )
+    @PostMapping(
+            value = "/lease-contract/upload-analyze",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public LeaseContractAnalysisResponse uploadAndAnalyzeLeaseContract(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "사용자가 등록한 주소 ID") @RequestParam Long leaseCaseId,
+            @Parameter(description = "업로드할 임대차계약서 파일 목록 (여러 장 가능)", required = true) @RequestParam("files") List<MultipartFile> files
+    ) throws IOException {
+        return leaseContractAnalysisService.analyze(user.getUserId(), leaseCaseId, files);
     }
 }
