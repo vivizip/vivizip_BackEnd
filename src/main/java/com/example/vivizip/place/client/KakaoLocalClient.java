@@ -2,6 +2,7 @@ package com.example.vivizip.place.client;
 
 import com.example.vivizip.common.exception.ErrorStatus;
 import com.example.vivizip.common.exception.GeneralException;
+import com.example.vivizip.place.dto.KakaoCoord2AddressResponse;
 import com.example.vivizip.place.dto.KakaoPlaceSearchResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -53,6 +54,32 @@ public class KakaoLocalClient {
             throw new GeneralException(ErrorStatus.KAKAO_PLACE_SEARCH_FAILED); //카카오가 이상한 응답을 줄 경우 errorstatus
         } catch (RestClientException e) {
             log.error("[KakaoLocal] API 호출 오류: {}", e.getMessage());
+            throw new GeneralException(ErrorStatus._INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public KakaoCoord2AddressResponse coord2address(Double x, Double y) {
+        log.info("[KakaoLocal] 좌표→주소 변환 요청: x={}, y={}", x, y);
+        try {
+            KakaoCoord2AddressResponse response = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/v2/local/geo/coord2address.json")
+                            .queryParam("x", x)
+                            .queryParam("y", y)
+                            .build())
+                    .retrieve()
+                    .body(KakaoCoord2AddressResponse.class);
+
+            if (response == null || response.documents() == null) {
+                log.error("[KakaoLocal] 좌표→주소 비정상 응답: x={}, y={}", x, y);
+                throw new GeneralException(ErrorStatus.KAKAO_PLACE_SEARCH_FAILED);
+            }
+            return response;
+        } catch (HttpClientErrorException e) {
+            log.error("[KakaoLocal] 좌표→주소 요청 실패: status={}", e.getStatusCode());
+            throw new GeneralException(ErrorStatus.KAKAO_PLACE_SEARCH_FAILED);
+        } catch (RestClientException e) {
+            log.error("[KakaoLocal] 좌표→주소 API 호출 오류: {}", e.getMessage());
             throw new GeneralException(ErrorStatus._INTERNAL_SERVER_ERROR);
         }
     }

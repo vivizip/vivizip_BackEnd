@@ -1,5 +1,6 @@
 package com.example.vivizip.place.controller;
 
+import com.example.vivizip.place.dto.NearestAddressResponse;
 import com.example.vivizip.place.dto.PlaceSearchResponse;
 import com.example.vivizip.place.service.PlaceService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,5 +34,14 @@ public class PlaceController {
             @RequestParam(defaultValue = "accuracy") String sort
     ) {
         return placeService.searchPlaces(query, x, y, page, size, sort);
+    }
+
+    @Operation(summary = "GPS 기반 현재 위치 주소 조회", description = "경도(x)·위도(y)를 전달하면 가장 가까운 건물의 도로명 주소 1개를 반환합니다.")
+    @GetMapping("/nearest-address")
+    public NearestAddressResponse getNearestAddress(
+            @Parameter(description = "경도(longitude)", example = "126.9857") @RequestParam Double x,
+            @Parameter(description = "위도(latitude)", example = "37.5609") @RequestParam Double y
+    ) {
+        return placeService.getNearestAddress(x, y);
     }
 }
