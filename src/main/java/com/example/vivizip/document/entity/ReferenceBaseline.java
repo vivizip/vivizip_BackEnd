@@ -33,6 +33,10 @@ public class ReferenceBaseline extends BaseEntity {
     @Column(name = "mortgage_maximum_claim_amount")
     private Long mortgageMaximumClaimAmount;
 
+    // 중개대상물 확인·설명서에서 추출한 매도인(임대인) 성명. 등기부 ownerName과 표기가 다를 수 있어 별도 컬럼으로 둔다.
+    @Column(name = "brokerage_document_owner_name", length = 100)
+    private String brokerageDocumentOwnerName;
+
     // 중개대상물 도로명 주소
     @Column(name = "brokerage_document_address", length = 500)
     private String brokerageDocumentAddress;
@@ -70,7 +74,9 @@ public class ReferenceBaseline extends BaseEntity {
         this.mortgageMaximumClaimAmount = mortgageMaximumClaimAmount;
     }
 
-    public void updateFromBrokerageDocument(String brokerageDocumentAddress, Long deposit, Long monthlyRent) {
+    public void updateFromBrokerageDocument(String brokerageDocumentOwnerName, String brokerageDocumentAddress,
+                                             Long deposit, Long monthlyRent) {
+        this.brokerageDocumentOwnerName = brokerageDocumentOwnerName;
         this.brokerageDocumentAddress = brokerageDocumentAddress;
         this.deposit = deposit;
         this.monthlyRent = monthlyRent;
