@@ -74,7 +74,7 @@ public class HousingPriceSearchService {
         if (lnbrMnnm == null) {
             return null;
         }
-        if (lnbrSlno == null || "0".equals(lnbrSlno)) {
+        if (lnbrSlno == null || lnbrSlno.isEmpty() || "0".equals(lnbrSlno)) {
             return lnbrMnnm;
         }
         return lnbrMnnm + "-" + lnbrSlno;
