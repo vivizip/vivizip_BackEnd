@@ -21,9 +21,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 // 임대차계약서 분석: OCR → AI 값 추출 → 하이라이트 박스 → reference_baseline 비교 → 불일치 멘트 → 위험 특약 → 응답 조립.
 // 중개대상물과 동일하게 1회성 분석이며 DB에 분석 결과를 저장하지 않는다.
@@ -56,29 +59,26 @@ public class LeaseContractAnalysisService {
         // 3. AI 값 추출 (LLM 호출 — 트랜잭션 밖)
         LeaseContractExtractedValues extracted = leaseContractValuePipeline.extract(ocrText);
 
-        // 4. 하이라이트 박스 — 라벨이 아닌 추출된 값으로 검색
-        // 임대인: 서명란이 하단에 있으므로 마지막 매치 사용
-        List<HighlightRegion> ownerRegions        = searchLastMatch(userId, saved.id(), extracted.owner(), "임대인");
-        // 계약일: 원문 그대로 검색
-        List<HighlightRegion> contractDateRegions = searchFirstMatch(userId, saved.id(), extracted.contractDateRawText(), "계약일");
-        // 소재지: 폴백 검색 (전체 → 앞 10글자)
-        List<HighlightRegion> addressRegions      = searchAddressFallback(userId, saved.id(), extracted.roadAddressRawText(), "소재지");
-        // 임대차 기간 시작·종료일: 원문 그대로 검색
-        List<HighlightRegion> leaseStartRegions   = searchFirstMatch(userId, saved.id(), extracted.leaseStartDateRawText(), "임대차 시작일");
-        List<HighlightRegion> leaseEndRegions     = searchFirstMatch(userId, saved.id(), extracted.leaseEndDateRawText(), "임대차 종료일");
-        // 보증금·차임: 원문 그대로 검색
-        List<HighlightRegion> depositRegions      = searchFirstMatch(userId, saved.id(), extracted.depositRawText(), "보증금");
-        List<HighlightRegion> rentRegions         = searchFirstMatch(userId, saved.id(), extracted.monthlyRentRawText(), "차임");
+        // 4. 하이라이트 박스
+        // [basicInfo.regions] 값 좌표: 제2조 라인 안의 임대차 시작일·종료일 날짜 텍스트
+        // 다중 매치 시 제2조 y축에 가장 근접한 것 선택 (계약금 지급일 등 다른 날짜와 구별)
+        List<HighlightRegion> leaseStartRegions = searchDateOnArticle2Line(userId, saved.id(), extracted.leaseStartDateRawText(), "임대차 시작일");
+        List<HighlightRegion> leaseEndRegions   = searchDateOnArticle2Line(userId, saved.id(), extracted.leaseEndDateRawText(), "임대차 종료일");
 
         List<HighlightRegion> basicInfoRegions = new ArrayList<>();
-        basicInfoRegions.addAll(ownerRegions);
-        basicInfoRegions.addAll(contractDateRegions);
-        basicInfoRegions.addAll(addressRegions);
         basicInfoRegions.addAll(leaseStartRegions);
         basicInfoRegions.addAll(leaseEndRegions);
 
-        List<HighlightRegion> costRegions = new ArrayList<>(depositRegions);
-        costRegions.addAll(rentRegions);
+        // [cost.regions] 라벨 좌표: 항목 제목 텍스트
+        // 매칭 실패 시 해당 region은 자동 생략
+        List<HighlightRegion> costRegions = new ArrayList<>();
+        // 임대인: 서명 표 블록 안에서 검색 (세로쓰기 대응 + 앵커 필터)
+        costRegions.addAll(searchOwnerInSignatureBlock(userId, saved.id()));
+        costRegions.addAll(searchByLabel(userId, saved.id(), "소재지"));
+        costRegions.addAll(searchByLabel(userId, saved.id(), "보증금"));
+        costRegions.addAll(searchByLabel(userId, saved.id(), "계약금"));
+        // 차임/월세: "2. 계약내용" 표 라벨 열 한정 검색 (부분 매칭·오인식 방지)
+        costRegions.addAll(searchRentLabelInContractTable(userId, saved.id()));
 
         // 5. reference_baseline 비교 (읽기 전용)
         Optional<ReferenceBaseline> baseline = referenceBaselineRepository.findByLeaseCaseId(leaseCaseId);
@@ -108,11 +108,15 @@ public class LeaseContractAnalysisService {
         }
 
         // 7. 위험 특약 분석 (specialClauses가 비어 있으면 스킵)
+        // 특약사항 좌표는 문서의 "특약사항" 라벨 위치 1개를 모든 항목이 공유
         List<RiskyClauseResult> riskyClauses = List.of();
         List<String> specialClauses = extracted.specialClauses();
         if (specialClauses != null && !specialClauses.isEmpty()) {
+            List<HighlightRegion> specialClauseRegions = searchByLabel(userId, saved.id(), "특약사항");
             List<RiskyClauseRaw> rawClauses = riskyClausePipeline.analyze(specialClauses);
-            riskyClauses = buildRiskyClauseResults(userId, saved.id(), rawClauses);
+            riskyClauses = rawClauses.stream()
+                    .map(raw -> new RiskyClauseResult(raw.originalText(), raw.reason(), raw.suggestion(), specialClauseRegions))
+                    .toList();
         }
 
         // 8. 응답 조립
@@ -179,53 +183,188 @@ public class LeaseContractAnalysisService {
 
     // --- 하이라이트 박스 검색 ---
 
-    // 임대인 이름 전용: 서명란이 하단에 있으므로 마지막 매치 사용
-    private List<HighlightRegion> searchLastMatch(Long userId, Long ocrResultId, String value, String label) {
-        if (value == null || value.isBlank()) return List.of();
+    // 서명 표 블록 안의 "임대인" 라벨 검색
+    // 세로쓰기("임","대","인") + 단일 field "임대인" 모두 후보에 포함
+    // "본 계약을 증명하기" 앵커 아래, 서명 블록에서 y 최소(= 최상단 = 임대인 행) 선택
+    private List<HighlightRegion> searchOwnerInSignatureBlock(Long userId, Long ocrResultId) {
         try {
-            KeywordSearchResponse response = ocrService.searchKeywordByField(userId, ocrResultId, value);
-            List<KeywordSearchResponse.MatchResult> matches = response.matches();
-            if (matches.isEmpty()) {
-                log.warn("[LeaseContract] 좌표 검색 실패 — label={}, keyword={}", label, value);
+            // 1. 앵커 y: "본 계약을 증명하기" 문장 위치
+            double anchorY = findAnchorY(userId, ocrResultId, "본 계약을 증명하기");
+
+            // 2. 단일 field "임대인" 후보
+            List<KeywordSearchResponse.MatchResult> singleMatches =
+                    ocrService.searchKeywordByField(userId, ocrResultId, "임대인").matches();
+
+            // 3. 세로쓰기 ["임","대","인"] 후보 (x 허용 오차 30px)
+            List<KeywordSearchResponse.MatchResult> verticalMatches =
+                    ocrService.searchVerticalChars(userId, ocrResultId, List.of("임", "대", "인"), 30.0).matches();
+
+            // 4. 합산 후 앵커 아래(서명 블록 내) 필터
+            List<KeywordSearchResponse.MatchResult> inBlock = new ArrayList<>();
+            inBlock.addAll(singleMatches);
+            inBlock.addAll(verticalMatches);
+            if (anchorY > 0) {
+                inBlock = inBlock.stream()
+                        .filter(m -> centerY(m.vertices()) > anchorY)
+                        .collect(Collectors.toList());
+            }
+
+            if (inBlock.isEmpty()) {
+                log.warn("[LeaseContract] 임대인 서명 블록 내 좌표 검색 실패");
                 return List.of();
             }
-            return toRegion(matches.get(matches.size() - 1), label).map(List::of).orElse(List.of());
+
+            // 5. 서명 블록 최상단(y 최소) → 임대인 행 (임차인·공동명의인보다 위)
+            KeywordSearchResponse.MatchResult best = inBlock.stream()
+                    .min(Comparator.comparingDouble(m -> centerY(m.vertices())))
+                    .orElse(inBlock.get(0));
+
+            return toRegion(best, "임대인").map(List::of).orElse(List.of());
         } catch (Exception e) {
-            log.warn("[LeaseContract] 좌표 검색 오류 — label={}, error={}", label, e.getMessage());
+            log.warn("[LeaseContract] 임대인 좌표 검색 오류 — error={}", e.getMessage());
             return List.of();
         }
     }
 
-    // 일반 검색: 첫 번째 매치
-    private List<HighlightRegion> searchFirstMatch(Long userId, Long ocrResultId, String value, String label) {
-        if (value == null || value.isBlank()) return List.of();
+    // "2. 계약내용" 표 라벨 열에서 "차임" 또는 "월세" 라벨 검색
+    // 보증금 x 기준 ±50px + 제1조~제2조 y 범위 필터 + 정확 일치
+    private List<HighlightRegion> searchRentLabelInContractTable(Long userId, Long ocrResultId) {
         try {
-            KeywordSearchResponse response = ocrService.searchKeywordByField(userId, ocrResultId, value);
-            List<KeywordSearchResponse.MatchResult> matches = response.matches();
-            if (matches.isEmpty()) {
-                log.warn("[LeaseContract] 좌표 검색 실패 — label={}, keyword={}", label, value);
+            // 보증금 라벨의 x 중심 (라벨 열 기준점)
+            double depositX = findLabelCenterX(userId, ocrResultId, "보증금");
+            // y 범위 앵커
+            double article1Y = findAnchorY(userId, ocrResultId, "제1조");
+            double article2Y = findAnchorY(userId, ocrResultId, "제2조");
+
+            // 정확 일치 후보 ("차임", "월세")
+            List<KeywordSearchResponse.MatchResult> candidates = new ArrayList<>();
+            candidates.addAll(ocrService.searchExactKeyword(userId, ocrResultId, "차임").matches());
+            candidates.addAll(ocrService.searchExactKeyword(userId, ocrResultId, "월세").matches());
+
+            if (candidates.isEmpty()) {
+                log.warn("[LeaseContract] 차임/월세 후보 없음");
                 return List.of();
             }
-            return toRegion(matches.get(0), label).map(List::of).orElse(List.of());
+
+            // x 기준 ±50px + 제1조 아래 + 제2조 위
+            List<KeywordSearchResponse.MatchResult> filtered = candidates.stream()
+                    .filter(m -> {
+                        double cx = centerX(m.vertices());
+                        double cy = centerY(m.vertices());
+                        boolean xOk = depositX <= 0 || Math.abs(cx - depositX) <= 50.0;
+                        boolean belowArticle1 = article1Y <= 0 || cy > article1Y;
+                        boolean aboveArticle2 = article2Y <= 0 || cy < article2Y;
+                        return xOk && belowArticle1 && aboveArticle2;
+                    })
+                    .collect(Collectors.toList());
+
+            if (filtered.isEmpty()) {
+                log.warn("[LeaseContract] 차임/월세 필터 후 후보 없음");
+                return List.of();
+            }
+
+            // 범위 내 y 최대 (= 라벨 열 최하단 = 차임 행)
+            KeywordSearchResponse.MatchResult best = filtered.stream()
+                    .max(Comparator.comparingDouble(m -> centerY(m.vertices())))
+                    .orElse(filtered.get(0));
+
+            return toRegion(best, "차임").map(List::of).orElse(List.of());
         } catch (Exception e) {
-            log.warn("[LeaseContract] 좌표 검색 오류 — label={}, error={}", label, e.getMessage());
+            log.warn("[LeaseContract] 차임 좌표 검색 오류 — error={}", e.getMessage());
             return List.of();
         }
     }
 
-    // 소재지 전용: 전체 → 앞 10글자 폴백
-    private List<HighlightRegion> searchAddressFallback(Long userId, Long ocrResultId, String rawText, String label) {
+    // 라벨 field의 x 중심 반환 (미발견 시 0.0)
+    private double findLabelCenterX(Long userId, Long ocrResultId, String keyword) {
+        try {
+            return ocrService.searchKeywordByField(userId, ocrResultId, keyword).matches().stream()
+                    .findFirst()
+                    .map(m -> centerX(m.vertices()))
+                    .orElse(0.0);
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
+    private double centerX(List<KeywordSearchResponse.Vertex> vertices) {
+        if (vertices == null || vertices.size() < 2) return 0.0;
+        Double x0 = vertices.get(0).x(); // top-left (minX)
+        Double x1 = vertices.get(1).x(); // top-right (maxX)
+        if (x0 == null || x1 == null) return 0.0;
+        return (x0 + x1) / 2.0;
+    }
+
+    // "본 계약을 증명하기" 등 앵커 문장의 y 중심 반환 (미발견 시 0.0)
+    private double findAnchorY(Long userId, Long ocrResultId, String anchorText) {
+        try {
+            KeywordSearchResponse anchor = ocrService.searchKeyword(userId, ocrResultId, anchorText);
+            return anchor.matches().stream()
+                    .findFirst()
+                    .map(m -> centerY(m.vertices()))
+                    .orElse(0.0);
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
+    // 문서에 적힌 라벨 키워드("소재지", "특약사항")로 검색 — 단어 단위 box, 첫 번째 매치
+    private List<HighlightRegion> searchByLabel(Long userId, Long ocrResultId, String keyword) {
+        try {
+            KeywordSearchResponse response = ocrService.searchKeywordByField(userId, ocrResultId, keyword);
+            List<KeywordSearchResponse.MatchResult> matches = response.matches();
+            if (matches.isEmpty()) {
+                log.warn("[LeaseContract] 라벨 좌표 검색 실패 — keyword={}", keyword);
+                return List.of();
+            }
+            return toRegion(matches.get(0), keyword).map(List::of).orElse(List.of());
+        } catch (Exception e) {
+            log.warn("[LeaseContract] 라벨 좌표 검색 오류 — keyword={}, error={}", keyword, e.getMessage());
+            return List.of();
+        }
+    }
+
+    // 제2조 라인에서 날짜 rawText 검색 — 단어 단위 box, 다중 매치 시 제2조 y축에 가장 근접한 것 선택
+    private List<HighlightRegion> searchDateOnArticle2Line(Long userId, Long ocrResultId, String rawText, String label) {
         if (rawText == null || rawText.isBlank()) return List.of();
-        List<HighlightRegion> regions = searchFirstMatch(userId, ocrResultId, rawText, label);
-        if (!regions.isEmpty()) return regions;
+        try {
+            KeywordSearchResponse response = ocrService.searchKeywordByField(userId, ocrResultId, rawText);
+            List<KeywordSearchResponse.MatchResult> matches = response.matches();
+            if (matches.isEmpty()) {
+                log.warn("[LeaseContract] 날짜 좌표 검색 실패 — label={}, rawText={}", label, rawText);
+                return List.of();
+            }
+            KeywordSearchResponse.MatchResult best = matches.size() == 1
+                    ? matches.get(0)
+                    : pickNearestToArticle2(userId, ocrResultId, matches);
+            return toRegion(best, label).map(List::of).orElse(List.of());
+        } catch (Exception e) {
+            log.warn("[LeaseContract] 날짜 좌표 검색 오류 — label={}, error={}", label, e.getMessage());
+            return List.of();
+        }
+    }
 
-        if (rawText.length() > 10) {
-            regions = searchFirstMatch(userId, ocrResultId, rawText.substring(0, 10), label);
+    // 매치 목록 중 제2조 y축에 가장 근접한 것 반환 (제2조 미발견 시 첫 번째 매치)
+    private KeywordSearchResponse.MatchResult pickNearestToArticle2(Long userId, Long ocrResultId,
+                                                                      List<KeywordSearchResponse.MatchResult> matches) {
+        try {
+            KeywordSearchResponse article2 = ocrService.searchKeywordByField(userId, ocrResultId, "제2조");
+            if (article2.matches().isEmpty()) return matches.get(0);
+            double article2Y = centerY(article2.matches().get(0).vertices());
+            return matches.stream()
+                    .min(Comparator.comparingDouble(m -> Math.abs(centerY(m.vertices()) - article2Y)))
+                    .orElse(matches.get(0));
+        } catch (Exception e) {
+            return matches.get(0);
         }
-        if (regions.isEmpty()) {
-            log.warn("[LeaseContract] 소재지 좌표 검색 최종 실패 — rawText={}", rawText);
-        }
-        return regions;
+    }
+
+    private double centerY(List<KeywordSearchResponse.Vertex> vertices) {
+        if (vertices == null || vertices.size() < 3) return 0.0;
+        Double y0 = vertices.get(0).y();
+        Double y2 = vertices.get(2).y();
+        if (y0 == null || y2 == null) return 0.0;
+        return (y0 + y2) / 2.0;
     }
 
     private Optional<HighlightRegion> toRegion(KeywordSearchResponse.MatchResult match, String label) {
@@ -240,35 +379,13 @@ public class LeaseContractAnalysisService {
         return Optional.of(new HighlightRegion(match.pageIndex(), box, label));
     }
 
-    // --- 위험 특약 좌표 검색 (폴백: 전체 → 앞 10글자 → 빈 배열) ---
-
-    private List<RiskyClauseResult> buildRiskyClauseResults(Long userId, Long ocrResultId,
-                                                              List<RiskyClauseRaw> rawClauses) {
-        List<RiskyClauseResult> results = new ArrayList<>();
-        for (RiskyClauseRaw raw : rawClauses) {
-            List<HighlightRegion> regions = searchRiskyClauseRegions(userId, ocrResultId, raw.originalText());
-            results.add(new RiskyClauseResult(raw.originalText(), raw.reason(), raw.suggestion(), regions));
-        }
-        return results;
-    }
-
-    private List<HighlightRegion> searchRiskyClauseRegions(Long userId, Long ocrResultId, String originalText) {
-        List<HighlightRegion> regions = searchFirstMatch(userId, ocrResultId, originalText, "특약");
-        if (!regions.isEmpty()) return regions;
-
-        if (originalText != null && originalText.length() > 10) {
-            regions = searchFirstMatch(userId, ocrResultId, originalText.substring(0, 10), "특약");
-        }
-        return regions;
-    }
-
     // --- 문자열 정규화 ---
 
     // 공동명의 cross-match: 양쪽 이름 목록(쉼표 구분)에서 하나라도 교집합이 있으면 true
     private boolean anyOwnerMatches(String names1, String names2) {
         if (names1 == null || names2 == null) return false;
-        java.util.Set<String> set = java.util.Arrays.stream(names1.split(","))
-                .map(this::normalize).collect(java.util.stream.Collectors.toSet());
+        Set<String> set = java.util.Arrays.stream(names1.split(","))
+                .map(this::normalize).collect(Collectors.toSet());
         return java.util.Arrays.stream(names2.split(","))
                 .map(this::normalize).anyMatch(set::contains);
     }
