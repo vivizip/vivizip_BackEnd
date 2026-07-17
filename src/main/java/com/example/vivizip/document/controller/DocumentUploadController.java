@@ -53,7 +53,11 @@ public class DocumentUploadController {
                     "**riskExplanations** (위험 항목 외국인 설명, riskFlags 중 true인 항목만 포함, 없으면 빈 배열)\n" +
                     "- `riskType` : 위험 항목 enum명 (예: SEIZURE)\n" +
                     "- `term` : 한국어 법률 용어 (예: 압류)\n" +
-                    "- `explanation` : 세입자 국적 맞춤 한국어 설명"
+                    "- `explanation` : 세입자 국적 맞춤 한국어 설명\n\n" +
+                    "**marketPrice** : 계약 건(lease_case) 생성 시 사용자가 입력한 도로명주소(LeaseCase.roadAddress)로 " +
+                    "조회한 공시가격(원). juso 조회 실패 등으로 못 구하면 null\n\n" +
+                    "**depositRiskRatio** : ((mortgageMaximumClaimAmount + reference_baseline.deposit) / marketPrice) * 100.\n" +
+                    "중개대상물 분석이 아직 안 돼 보증금(deposit)이 없거나, marketPrice를 못 구했으면 계산하지 않고 null"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "분석 성공"),
