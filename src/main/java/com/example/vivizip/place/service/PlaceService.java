@@ -1,7 +1,9 @@
 package com.example.vivizip.place.service;
 
 import com.example.vivizip.place.client.KakaoLocalClient;
+import com.example.vivizip.place.dto.KakaoCoord2AddressResponse;
 import com.example.vivizip.place.dto.KakaoPlaceSearchResponse;
+import com.example.vivizip.place.dto.NearestAddressResponse;
 import com.example.vivizip.place.dto.PlaceSearchResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,19 @@ public class PlaceService {
                 .toList();
 
         return new PlaceSearchResponse(places, kakaoResponse.meta().isEnd());
+    }
+
+    public NearestAddressResponse getNearestAddress(Double x, Double y) {
+        KakaoCoord2AddressResponse response = kakaoLocalClient.coord2address(x, y);
+        if (response.documents().isEmpty()) {
+            return new NearestAddressResponse(null);
+        }
+        KakaoCoord2AddressResponse.Document doc = response.documents().get(0);
+        // 도로명주소 우선, 없으면 지번주소
+        String address = (doc.roadAddress() != null && doc.roadAddress().addressName() != null)
+                ? doc.roadAddress().addressName()
+                : (doc.address() != null ? doc.address().addressName() : null);
+        return new NearestAddressResponse(address);
     }
 
     private PlaceSearchResponse.PlaceItem toPlaceItem(KakaoPlaceSearchResponse.Document doc) {
