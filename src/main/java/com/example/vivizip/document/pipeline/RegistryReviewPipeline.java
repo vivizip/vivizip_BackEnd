@@ -31,7 +31,8 @@ public class RegistryReviewPipeline implements DocumentAnalysisPipeline<Registry
 
             ── 우선순위 규칙 ──
             OCR 텍스트에 "주요 등기사항 요약"이 포함되어 있는 경우 (hasSummaryPage = true):
-              - ownerName: 요약본 "1. 소유지분현황"에서 "(소유자)" 표기된 등기명의인
+              - ownerName: 요약본 "1. 소유지분현황"에서 "(소유자)" 표기된 등기명의인. 공동명의면 쉼표로 구분.
+                예: "홍길동" / "홍길동, 이영희"
               - propertyAddress: 요약본 상단 "[집합건물]" 또는 "[건물]" 뒤에 기재된 주소. 없으면 표제부에서 추출.
               - hasMortgage / mortgageMaximumClaimAmount: 요약본 "3. (근)저당권 및 전세권 등"에서
                 "근저당권설정"의 채권최고액만 합산. 요약본에 없는 근저당은 말소된 것이므로 포함하지 않음.
@@ -39,7 +40,8 @@ public class RegistryReviewPipeline implements DocumentAnalysisPipeline<Registry
                 있으므로 본문에서도 해당 문구가 존재하는지 반드시 교차 확인.
 
             OCR 텍스트에 "주요 등기사항 요약"이 없는 경우 (hasSummaryPage = false):
-              - ownerName: 갑구에서 순위번호가 가장 큰 소유권 등기("소유권보존" 또는 "소유권이전")의 소유자명
+              - ownerName: 갑구에서 순위번호가 가장 큰 소유권 등기("소유권보존" 또는 "소유권이전")의 소유자명.
+                공동명의면 쉼표로 구분. 예: "홍길동" / "홍길동, 이영희"
               - propertyAddress: 표제부의 [도로명주소] 우선, 없으면 소재지번. 집합건물은 동·호수 포함.
               - hasMortgage / mortgageMaximumClaimAmount: 을구에서 "N번○○등기말소" 패턴으로
                 말소된 순위번호를 먼저 찾아 제외한 뒤 남은 근저당권설정의 채권최고액 합산.

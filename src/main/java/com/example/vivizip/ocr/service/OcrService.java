@@ -122,6 +122,121 @@ public class OcrService {
         return new KeywordSearchResponse(keyword, matches.size(), matches);
     }
 
+    // 필드 단위로 키워드를 검색한다 — 줄 병합 없이 키워드가 포함된 각 field의 boundingPoly만 반환.
+    // 하이라이트 박스를 줄 전체가 아닌 키워드 단어에만 표시할 때 사용한다.
+    // 기존 searchKeyword(줄 병합 union)가 필요한 호출부는 그대로 둔다.
+    @Transactional(readOnly = true)
+    public KeywordSearchResponse searchKeywordByField(Long userId, Long id, String keyword) throws IOException {
+        OcrResult result = findOwnedResult(userId, id);
+        List<ClovaOcrResponse> responses = objectMapper.readValue(result.getRawJson(), new TypeReference<>() {});
+
+        List<KeywordSearchResponse.MatchResult> matches = new ArrayList<>();
+        for (int pageIndex = 0; pageIndex < responses.size(); pageIndex++) {
+            for (ClovaOcrResponse.Image image : responses.get(pageIndex).images()) {
+                if (image.fields() == null) continue;
+                for (ClovaOcrResponse.Field field : image.fields()) {
+                    String text = field.inferText();
+                    if (text != null && text.contains(keyword)) {
+                        matches.add(new KeywordSearchResponse.MatchResult(
+                                pageIndex, text, fieldToVertices(field)));
+                    }
+                }
+            }
+        }
+        return new KeywordSearchResponse(keyword, matches.size(), matches);
+    }
+
+    /**
+     * 세로쓰기 텍스트 검색: chars 순서대로 field inferText가 일치하고
+     * x 중심이 xTolerance px 이내이며 y가 순증(위→아래)하면 union box 반환.
+     * 단일 field로 "임대인"이 인식되지 않고 "임" "대" "인"으로 분리된 경우에 사용.
+     */
+    @Transactional(readOnly = true)
+    public KeywordSearchResponse searchVerticalChars(Long userId, Long id, List<String> chars, double xTolerance) throws IOException {
+        OcrResult result = findOwnedResult(userId, id);
+        List<ClovaOcrResponse> responses = objectMapper.readValue(result.getRawJson(), new TypeReference<>() {});
+        List<KeywordSearchResponse.MatchResult> matches = new ArrayList<>();
+        int n = chars.size();
+
+        for (int pageIndex = 0; pageIndex < responses.size(); pageIndex++) {
+            for (ClovaOcrResponse.Image image : responses.get(pageIndex).images()) {
+                if (image.fields() == null) continue;
+                List<ClovaOcrResponse.Field> fields = image.fields();
+                for (int i = 0; i <= fields.size() - n; i++) {
+                    boolean textOk = true;
+                    for (int j = 0; j < n; j++) {
+                        if (!chars.get(j).equals(fields.get(i + j).inferText())) {
+                            textOk = false;
+                            break;
+                        }
+                    }
+                    if (!textOk) continue;
+
+                    List<ClovaOcrResponse.Field> group = new ArrayList<>(fields.subList(i, i + n));
+                    double refX = fieldCenterX(group.get(0));
+                    boolean xOk = group.stream().allMatch(f -> Math.abs(fieldCenterX(f) - refX) <= xTolerance);
+                    if (!xOk) continue;
+
+                    boolean yOk = true;
+                    for (int j = 1; j < n; j++) {
+                        if (fieldCenterY(group.get(j)) <= fieldCenterY(group.get(j - 1))) {
+                            yOk = false;
+                            break;
+                        }
+                    }
+                    if (!yOk) continue;
+
+                    matches.add(new KeywordSearchResponse.MatchResult(
+                            pageIndex, String.join("", chars), mergeVertices(group)));
+                }
+            }
+        }
+        return new KeywordSearchResponse(String.join("", chars), matches.size(), matches);
+    }
+
+    private double fieldCenterX(ClovaOcrResponse.Field field) {
+        if (field.boundingPoly() == null || field.boundingPoly().vertices() == null) return 0.0;
+        return field.boundingPoly().vertices().stream()
+                .mapToDouble(v -> v.x() != null ? v.x() : 0.0).average().orElse(0.0);
+    }
+
+    private double fieldCenterY(ClovaOcrResponse.Field field) {
+        if (field.boundingPoly() == null || field.boundingPoly().vertices() == null) return 0.0;
+        return field.boundingPoly().vertices().stream()
+                .mapToDouble(v -> v.y() != null ? v.y() : 0.0).average().orElse(0.0);
+    }
+
+    // 공백 제거 후 keyword와 정확히 일치하는 field만 반환 (부분 문자열 매칭 금지)
+    @Transactional(readOnly = true)
+    public KeywordSearchResponse searchExactKeyword(Long userId, Long id, String keyword) throws IOException {
+        OcrResult result = findOwnedResult(userId, id);
+        List<ClovaOcrResponse> responses = objectMapper.readValue(result.getRawJson(), new TypeReference<>() {});
+        List<KeywordSearchResponse.MatchResult> matches = new ArrayList<>();
+
+        for (int pageIndex = 0; pageIndex < responses.size(); pageIndex++) {
+            for (ClovaOcrResponse.Image image : responses.get(pageIndex).images()) {
+                if (image.fields() == null) continue;
+                for (ClovaOcrResponse.Field field : image.fields()) {
+                    String text = field.inferText();
+                    if (text != null && text.replaceAll("\\s+", "").equals(keyword)) {
+                        matches.add(new KeywordSearchResponse.MatchResult(
+                                pageIndex, text, fieldToVertices(field)));
+                    }
+                }
+            }
+        }
+        return new KeywordSearchResponse(keyword, matches.size(), matches);
+    }
+
+    private List<KeywordSearchResponse.Vertex> fieldToVertices(ClovaOcrResponse.Field field) {
+        if (field.boundingPoly() == null || field.boundingPoly().vertices() == null) return List.of();
+        return field.boundingPoly().vertices().stream()
+                .map(v -> new KeywordSearchResponse.Vertex(
+                        v.x() != null ? v.x() : 0.0,
+                        v.y() != null ? v.y() : 0.0))
+                .toList();
+    }
+
     // 여러 필드의 bounding box를 하나로 합치기 (min/max 좌표)
     private List<KeywordSearchResponse.Vertex> mergeVertices(List<ClovaOcrResponse.Field> fields) {
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
