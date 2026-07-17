@@ -154,10 +154,9 @@ public enum ErrorStatus implements BaseErrorCode{
     @ExplainError("업로드할 파일이 1개도 없습니다.")
     DOCUMENT_FILE_EMPTY(BAD_REQUEST, 4605, "업로드할 파일이 없습니다."),
 
-
     // juso (4750~4799)
     @ExplainError("juso(도로명주소) API 호출에 실패했거나 errorCode가 0이 아닙니다.")
-    JUSO_API_ERROR(INTERNAL_SERVER_ERROR, 4750, "주소 검색에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    JUSO_API_ERROR(INTERNAL_SERVER_ERROR, 4750, "주소 검색에 실패했습니다. 잠시 후 다시 시도해주세요."),
 
     // lease contract analysis (4610~4619)
     @ExplainError("재시도를 모두 소진해도 임대차계약서 AI 응답을 구조화된 형식으로 해석하지 못했습니다.")
