@@ -23,7 +23,8 @@ public class BuildingLedgerReviewPipeline implements DocumentAnalysisPipeline<Bu
             추출 규칙:
             1. issuedDate: "발급일 :" 뒤의 "YYYY년 MM월 DD일" → "YYYY.MM.DD" 형식으로 변환
             2. hasViolation: 문서에 "위반건축물"이라는 정확한 단어가 있으면 true, 없으면 false
-            3. ownerName: "성명(명칭)" 항목의 사람 이름
+            3. ownerName: "성명(명칭)" 항목의 사람 이름. 공동명의면 모든 소유자 이름을 쉼표로 구분해 한 문자열에 담는다.
+               예: "홍길동" / "홍길동, 이영희"
             4. ownershipTransferDate: "소유권이전" 옆의 날짜 (YYYY.MM.DD 형식)
             5. address: "대지위치" 값 + 공백 + "지번" 값을 합친 문자열. "도로명주소"는 사용하지 않는다.
                표 형식 OCR 특성상 라벨과 값이 시각적 순서와 다르게 섞여 나올 수 있다. 흔한 순서 예:

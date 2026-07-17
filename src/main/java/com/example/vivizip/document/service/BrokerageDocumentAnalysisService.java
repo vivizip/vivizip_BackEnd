@@ -124,12 +124,22 @@ public class BrokerageDocumentAnalysisService {
     }
 
     private boolean matchesBasicInfo(BrokerageDocumentExtractedValues extracted, ReferenceBaseline baseline) {
-        boolean ownerMatches = normalize(extracted.owner()).equals(normalize(baseline.getOwnerName()));
+        // 공동명의 cross-match: 양쪽 모두 쉼표 분리 후 교집합이 있으면 일치
+        boolean ownerMatches = anyOwnerMatches(extracted.owner(), baseline.getOwnerName());
         String extractedAddress = normalizeAddressCore(extracted.roadAddress());
         String baselineAddress = normalizeAddressCore(baseline.getPropertyAddress());
         boolean addressMatches = !extractedAddress.isEmpty() && !baselineAddress.isEmpty()
                 && (extractedAddress.contains(baselineAddress) || baselineAddress.contains(extractedAddress));
         return ownerMatches && addressMatches;
+    }
+
+    // 공동명의 cross-match: 양쪽 이름 목록(쉼표 구분)에서 하나라도 교집합이 있으면 true
+    private boolean anyOwnerMatches(String names1, String names2) {
+        if (names1 == null || names2 == null) return false;
+        java.util.Set<String> set = java.util.Arrays.stream(names1.split(","))
+                .map(this::normalize).collect(java.util.stream.Collectors.toSet());
+        return java.util.Arrays.stream(names2.split(","))
+                .map(this::normalize).anyMatch(set::contains);
     }
 
     private String normalize(String value) {
