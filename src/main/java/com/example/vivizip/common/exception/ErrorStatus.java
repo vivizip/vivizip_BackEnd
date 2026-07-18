@@ -160,7 +160,11 @@ public enum ErrorStatus implements BaseErrorCode{
 
     // lease contract analysis (4610~4619)
     @ExplainError("재시도를 모두 소진해도 임대차계약서 AI 응답을 구조화된 형식으로 해석하지 못했습니다.")
-    LEASE_CONTRACT_ANALYSIS_FAILED(INTERNAL_SERVER_ERROR, 4610, "임대차계약서 분석에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    LEASE_CONTRACT_ANALYSIS_FAILED(INTERNAL_SERVER_ERROR, 4610, "임대차계약서 분석에 실패했습니다. 잠시 후 다시 시도해주세요."),
+
+    // notification (4800~4849)
+    @ExplainError("존재하지 않거나 본인의 알림이 아닙니다.")
+    NOTIFICATION_NOT_FOUND(NOT_FOUND, 4800, "존재하지 않는 알림입니다.");
 
 
 

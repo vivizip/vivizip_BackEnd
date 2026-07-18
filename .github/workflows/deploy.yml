@@ -71,6 +71,9 @@ jobs:
 
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
             OPENAI_MODEL=${{ secrets.OPENAI_MODEL }}
+            
+            JUSO_API_KEY=${{ secrets.JUSO_API_KEY }}
+            FIREBASE_CREDENTIALS_BASE64=${{ secrets.FIREBASE_CREDENTIALS_BASE64 }}
 
             JUSO_API_KEY=${{ secrets.JUSO_API_KEY }}
 
