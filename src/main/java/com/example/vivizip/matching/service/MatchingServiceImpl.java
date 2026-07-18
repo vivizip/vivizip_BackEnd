@@ -13,6 +13,7 @@ import com.example.vivizip.matching.entity.MatchStatus;
 import com.example.vivizip.matching.entity.TimeSlot;
 import com.example.vivizip.matching.repository.MatchRepository;
 import com.example.vivizip.matching.repository.TimeSlotRepository;
+import com.example.vivizip.notification.service.NotificationService;
 import com.example.vivizip.user.entity.Gender;
 import com.example.vivizip.user.entity.Role;
 import com.example.vivizip.user.entity.User;
@@ -40,6 +41,7 @@ public class MatchingServiceImpl implements MatchingService {
     private final TimeSlotRepository timeSlotRepository;
     private final MatchRepository matchRepository;
     private final ChatRoomService chatRoomService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -96,6 +98,7 @@ public class MatchingServiceImpl implements MatchingService {
         User supporter = pickBestSupporter(student, candidates);
         Match match = matchRepository.save(Match.createMatched(student.getId(), supporter.getId()));
         Long chatRoomId = chatRoomService.createForMatch(match.getId(), student.getId(), supporter.getId());
+        notifySupporterMatched(match);
         return MatchResponse.of(match, student, supporter, student.getId(), chatRoomId);
     }
 
@@ -159,7 +162,14 @@ public class MatchingServiceImpl implements MatchingService {
 
         Match newMatch = matchRepository.save(Match.createMatched(student.getId(), supporter.getId()));
         Long chatRoomId = chatRoomService.createForMatch(newMatch.getId(), student.getId(), supporter.getId());
+        notifySupporterMatched(newMatch);
         return MatchResponse.of(newMatch, student, supporter, userId, chatRoomId);
+    }
+
+    // 신청자뿐 아니라 매칭된 상대(서포터즈/유학생) 모두에게 매칭 완료를 알린다.
+    private void notifySupporterMatched(Match match) {
+        notificationService.notifySupporterMatched(match.getStudentId(), match.getId());
+        notificationService.notifySupporterMatched(match.getSupporterId(), match.getId());
     }
 
     private void replaceTimeSlots(Long userId, List<TimeSlotRequest> requestedSlots) {
