@@ -1,6 +1,7 @@
 package com.example.vivizip.matching.controller;
 
 import com.example.vivizip.matching.dto.MatchResponse;
+import com.example.vivizip.matching.dto.MatchStatusResponse;
 import com.example.vivizip.matching.dto.RematchRequest;
 import com.example.vivizip.matching.dto.SchoolVerificationConfirmRequest;
 import com.example.vivizip.matching.dto.SchoolVerificationSendRequest;
@@ -26,6 +27,9 @@ import static com.example.vivizip.consts.StaticVariable.SWAGGER_JWT;
 @RequestMapping("/api/matches")
 @RequiredArgsConstructor
 public class MatchController {
+
+    private static final String COUNTERPART_KOREAN_LEVEL_NOTE =
+            "`counterpartKoreanLevel`은 상대가 서포터즈면 항상 `null`입니다 (서포터즈 온보딩에는 한국어 수준 항목이 없음).";
 
     private final MatchingService matchingService;
     private final SchoolVerificationService schoolVerificationService;
@@ -66,21 +70,47 @@ public class MatchController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "매칭 신청", description = "로그인한 유학생이 같은 학교의 서포터즈 중 시간대가 겹치는 후보를 찾아 점수가 가장 높은 서포터즈와 매칭합니다.")
+    @Operation(
+            summary = "매칭 상태 조회",
+            description = "로그인한 사용자의 매칭 진행 상태를 3단계로 반환합니다.\n\n" +
+                    "- `NOT_APPLIED`: 아직 온보딩(서포터즈/유학생 등록)을 하지 않음 — 신청 전\n" +
+                    "- `APPLIED_NOT_MATCHED`: 온보딩은 했지만 아직 MATCHED 상태 매칭이 없음 — 신청 후 매칭 전\n" +
+                    "- `MATCHED`: 현재 MATCHED 상태 매칭이 있음 — 매칭된 후"
+    )
+    @GetMapping("/status")
+    public ResponseEntity<MatchStatusResponse> getMatchStatus(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(matchingService.getMatchStatus(userDetails.getUserId()));
+    }
+
+    @Operation(
+            summary = "매칭 신청",
+            description = "로그인한 유학생이 같은 학교의 서포터즈 중 시간대가 겹치는 후보를 찾아 점수가 가장 높은 서포터즈와 매칭합니다.\n\n" +
+                    COUNTERPART_KOREAN_LEVEL_NOTE
+    )
     @PostMapping
     public ResponseEntity<MatchResponse> applyMatch(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(matchingService.applyMatch(userDetails.getUserId()));
     }
 
-    @Operation(summary = "매칭 결과 조회", description = "로그인한 사용자의 현재 MATCHED 상태 매칭 정보를 상대방 정보와 함께 조회합니다.")
+    @Operation(
+            summary = "매칭 결과 조회",
+            description = "로그인한 사용자의 현재 MATCHED 상태 매칭 정보를 상대방 정보와 함께 조회합니다.\n\n" +
+                    COUNTERPART_KOREAN_LEVEL_NOTE
+    )
     @GetMapping("/result")
     public ResponseEntity<MatchResponse> getMatchResult(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(matchingService.getMatchResult(userDetails.getUserId()));
     }
 
-    @Operation(summary = "재매칭", description = "유학생 또는 서포터즈가 현재 매칭에 대해 재매칭을 요청합니다. 기존 매칭은 취소되고, 새로운 상대와 매칭됩니다. 사용자당 최대 3회까지 가능합니다.")
+    @Operation(
+            summary = "재매칭",
+            description = "유학생 또는 서포터즈가 현재 매칭에 대해 재매칭을 요청합니다. 기존 매칭은 취소되고, 새로운 상대와 매칭됩니다. " +
+                    "사용자당 최대 3회까지 가능합니다.\n\n" +
+                    COUNTERPART_KOREAN_LEVEL_NOTE
+    )
     @PostMapping("/{matchId}/rematch")
     public ResponseEntity<MatchResponse> rematch(
             @AuthenticationPrincipal CustomUserDetails userDetails,
