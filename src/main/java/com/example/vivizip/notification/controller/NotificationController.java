@@ -80,16 +80,19 @@ public class NotificationController {
         notificationService.deleteFcmToken(user.getUserId(), request.token());
     }
 
-    @Operation(
-            summary = "[테스트] 아티클 업로드 알림 발송",
-            description = "실제 아티클 발행 기능이 아직 없어, 알림 발송 로직만 확인하기 위한 테스트용 엔드포인트입니다. " +
-                    "ACTIVE 상태인 모든 유저에게 ARTICLE_UPLOADED 알림을 보냅니다."
-    )
-    @PostMapping("/test/article-uploaded")
-    public void testArticleUploaded(
-            @Parameter(description = "알림 제목") @RequestParam(defaultValue = "새로운 아티클이 업로드되었어요") String title,
-            @Parameter(description = "알림 본문") @RequestParam(defaultValue = "비자 변경 날짜가 다가오지 않으셨나요? '확정날짜 받는 방법'을 알아보세요") String body,
-            @Parameter(description = "탭 시 이동할 아티클 id (없어도 됨)") @RequestParam(required = false) Long articleId) {
-        notificationService.notifyArticleUploaded(title, body, articleId);
-    }
+    // 테스트용
+    //
+    //
+    // @Operation(
+    //         summary = "[테스트] 아티클 업로드 알림 발송",
+    //         description = "실제 아티클 발행 기능이 아직 없어, 알림 발송 로직만 확인하기 위한 테스트용 엔드포인트입니다. " +
+    //                 "ACTIVE 상태인 모든 유저에게 ARTICLE_UPLOADED 알림을 보냅니다."
+    // )
+    // @PostMapping("/test/article-uploaded")
+    // public void testArticleUploaded(
+    //         @Parameter(description = "알림 제목") @RequestParam(defaultValue = "새로운 아티클이 업로드되었어요") String title,
+    //         @Parameter(description = "알림 본문") @RequestParam(defaultValue = "비자 변경 날짜가 다가오지 않으셨나요? '확정날짜 받는 방법'을 알아보세요") String body,
+    //         @Parameter(description = "탭 시 이동할 아티클 id (없어도 됨)") @RequestParam(required = false) Long articleId) {
+    //     notificationService.notifyArticleUploaded(title, body, articleId);
+    // }
 }

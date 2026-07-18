@@ -121,6 +121,12 @@ public class NotificationService {
 
     private String truncate(String text) {
         if (text == null) return "";
-        return text.length() > CHAT_PREVIEW_MAX_LENGTH ? text.substring(0, CHAT_PREVIEW_MAX_LENGTH) + "…" : text;
+        if (text.length() <= CHAT_PREVIEW_MAX_LENGTH) return text;
+
+        int end = CHAT_PREVIEW_MAX_LENGTH;
+        if (Character.isHighSurrogate(text.charAt(end - 1))) {
+            end--;
+        }
+        return text.substring(0, end) + "…";
     }
 }
