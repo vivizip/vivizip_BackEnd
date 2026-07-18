@@ -12,6 +12,7 @@ import com.example.vivizip.chat.repository.ChatMessageRepository;
 import com.example.vivizip.chat.repository.ChatRoomRepository;
 import com.example.vivizip.common.exception.ErrorStatus;
 import com.example.vivizip.common.exception.GeneralException;
+import com.example.vivizip.notification.service.NotificationService;
 import com.example.vivizip.user.entity.Role;
 import com.example.vivizip.user.entity.User;
 import com.example.vivizip.user.repository.UserRepository;
@@ -36,6 +37,7 @@ public class ChatRoomService {
     private final S3Service s3Service;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatMessagePersister chatMessagePersister;
+    private final NotificationService notificationService;
 
     // 방 생성 or 기존 방 반환 (role 검증 포함)
     @Transactional
@@ -149,6 +151,11 @@ public class ChatRoomService {
 
         // 4. 커밋 후 브로드캐스트
         messagingTemplate.convertAndSend("/sub/chat/" + roomId, response);
+
+        // 5. 미접속 대응용 알림/FCM 푸시 (실시간 브로드캐스트와 별개)
+        Long recipientId = room.getStudentId().equals(userId) ? room.getSupporterId() : room.getStudentId();
+        String senderName = userRepository.findById(userId).map(User::getName).orElse("");
+        notificationService.notifyChatMessage(recipientId, roomId, senderName, "사진을 보냈습니다");
 
         return response;
     }

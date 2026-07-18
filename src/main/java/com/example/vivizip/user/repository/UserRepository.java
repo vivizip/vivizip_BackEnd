@@ -14,4 +14,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findBySchoolIdAndRoleAndStatusAndSchoolVerified(
             Long schoolId, Role role, UserStatus status, Boolean schoolVerified);
+
+    List<User> findByStatus(UserStatus status);
 }
