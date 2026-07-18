@@ -3,11 +3,14 @@ package com.example.vivizip.matching.service;
 import com.example.vivizip.chat.service.ChatRoomService;
 import com.example.vivizip.common.exception.ErrorStatus;
 import com.example.vivizip.common.exception.GeneralException;
+import com.example.vivizip.matching.dto.MatchApplicationStatus;
 import com.example.vivizip.matching.dto.MatchResponse;
+import com.example.vivizip.matching.dto.MatchStatusResponse;
 import com.example.vivizip.matching.dto.RematchRequest;
 import com.example.vivizip.matching.dto.StudentOnboardingRequest;
 import com.example.vivizip.matching.dto.SupporterOnboardingRequest;
 import com.example.vivizip.matching.dto.TimeSlotRequest;
+import com.example.vivizip.matching.dto.TimeSlotResponse;
 import com.example.vivizip.matching.entity.Match;
 import com.example.vivizip.matching.entity.MatchStatus;
 import com.example.vivizip.matching.entity.TimeSlot;
@@ -99,7 +102,8 @@ public class MatchingServiceImpl implements MatchingService {
         Match match = matchRepository.save(Match.createMatched(student.getId(), supporter.getId()));
         Long chatRoomId = chatRoomService.createForMatch(match.getId(), student.getId(), supporter.getId());
         notifySupporterMatched(match);
-        return MatchResponse.of(match, student, supporter, student.getId(), chatRoomId);
+        return MatchResponse.of(match, student, supporter, student.getId(), chatRoomId,
+                counterpartTimeSlots(student.getId(), supporter.getId(), student.getId()));
     }
 
     @Override
@@ -114,7 +118,24 @@ public class MatchingServiceImpl implements MatchingService {
         User student = getUser(match.getStudentId());
         User supporter = getUser(match.getSupporterId());
         Long chatRoomId = chatRoomService.findRoomIdByMatchId(match.getId());
-        return MatchResponse.of(match, student, supporter, userId, chatRoomId);
+        return MatchResponse.of(match, student, supporter, userId, chatRoomId,
+                counterpartTimeSlots(student.getId(), supporter.getId(), userId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MatchStatusResponse getMatchStatus(Long userId) {
+        User user = getUser(userId);
+        if (user.getRole() == null) {
+            return MatchStatusResponse.of(MatchApplicationStatus.NOT_APPLIED);
+        }
+
+        boolean matched = (user.getRole() == Role.STUDENT
+                ? matchRepository.findByStudentIdAndStatus(userId, MatchStatus.MATCHED)
+                : matchRepository.findBySupporterIdAndStatus(userId, MatchStatus.MATCHED))
+                .isPresent();
+
+        return MatchStatusResponse.of(matched ? MatchApplicationStatus.MATCHED : MatchApplicationStatus.APPLIED_NOT_MATCHED);
     }
 
     @Override
@@ -163,7 +184,15 @@ public class MatchingServiceImpl implements MatchingService {
         Match newMatch = matchRepository.save(Match.createMatched(student.getId(), supporter.getId()));
         Long chatRoomId = chatRoomService.createForMatch(newMatch.getId(), student.getId(), supporter.getId());
         notifySupporterMatched(newMatch);
-        return MatchResponse.of(newMatch, student, supporter, userId, chatRoomId);
+        return MatchResponse.of(newMatch, student, supporter, userId, chatRoomId,
+                counterpartTimeSlots(student.getId(), supporter.getId(), userId));
+    }
+
+    private List<TimeSlotResponse> counterpartTimeSlots(Long studentId, Long supporterId, Long viewerId) {
+        Long counterpartId = viewerId.equals(studentId) ? supporterId : studentId;
+        return timeSlotRepository.findByUserId(counterpartId).stream()
+                .map(TimeSlotResponse::from)
+                .toList();
     }
 
     // 신청자뿐 아니라 매칭된 상대(서포터즈/유학생) 모두에게 매칭 완료를 알린다.

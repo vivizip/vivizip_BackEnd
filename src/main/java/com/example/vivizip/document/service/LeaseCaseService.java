@@ -19,11 +19,14 @@ public class LeaseCaseService {
 
     private final LeaseCaseRepository leaseCaseRepository;
 
+    private static final String DEFAULT_NAME = "우리집";
+
     @Transactional
     public LeaseCaseResponse create(Long userId, LeaseCaseCreateRequest request) {
+        String name = (request.name() == null || request.name().isBlank()) ? DEFAULT_NAME : request.name();
         LeaseCase leaseCase = LeaseCase.create(
                 userId,
-                request.name(),
+                name,
                 request.roadAddress(),
                 request.detailAddress()
         );
