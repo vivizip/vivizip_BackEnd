@@ -16,9 +16,10 @@ public record UserProfileResponse(
         Gender gender,
         Long schoolId,
         String schoolName,
+        String schoolLogoUrl,
         Boolean schoolVerified
 ) {
-    public static UserProfileResponse from(User user, String schoolName) {
+    public static UserProfileResponse from(User user, String schoolName, String schoolLogoUrl) {
         return new UserProfileResponse(
                 user.getId(),
                 user.getEmail(),
@@ -30,6 +31,7 @@ public record UserProfileResponse(
                 user.getGender(),
                 user.getSchoolId(),
                 schoolName,
+                schoolLogoUrl,
                 user.getSchoolVerified()
         );
     }
