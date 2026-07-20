@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -28,7 +30,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserProfileResponse getProfile(String email) {
         User user = findActiveUser(email);
-        return UserProfileResponse.from(user, resolveSchoolName(user.getSchoolId()));
+        return toProfileResponse(user);
     }
 
     @Override
@@ -36,7 +38,7 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponse updateProfile(String email, UpdateProfileRequest request) {
         User user = findActiveUser(email);
         user.updateProfile(request.profileImage());
-        return UserProfileResponse.from(user, resolveSchoolName(user.getSchoolId()));
+        return toProfileResponse(user);
     }
 
     @Override
@@ -44,7 +46,7 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponse updateLanguage(String email, UpdateLanguageRequest request) {
         User user = findActiveUser(email);
         user.updateLanguage(request.language());
-        return UserProfileResponse.from(user, resolveSchoolName(user.getSchoolId()));
+        return toProfileResponse(user);
     }
 
     @Override
@@ -53,11 +55,14 @@ public class UserServiceImpl implements UserService {
         findActiveUser(email).withdraw();
     }
 
-    private String resolveSchoolName(Long schoolId) {
-        if (schoolId == null) {
-            return null;
-        }
-        return schoolRepository.findById(schoolId).map(School::getName).orElse(null);
+    private UserProfileResponse toProfileResponse(User user) {
+        Optional<School> school = user.getSchoolId() == null
+                ? Optional.empty()
+                : schoolRepository.findById(user.getSchoolId());
+        return UserProfileResponse.from(
+                user,
+                school.map(School::getName).orElse(null),
+                school.map(School::getLogoImageUrl).orElse(null));
     }
 
     private User findActiveUser(String email) {
