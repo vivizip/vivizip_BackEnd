@@ -54,10 +54,11 @@ public class AuthServiceImpl implements AuthService {
                             .kakaoId(String.valueOf(kakaoUser.id()))
                             .email(kakaoUser.getEmail())
                             .name(kakaoUser.getName())
-                            .profileImage(kakaoUser.getProfileImageUrl())
                             .role(Role.STUDENT)
                             .build());
                 });
+        // 기존 유저도 로그인 시마다 카카오 프로필 이미지를 최신화
+        user.updateProfile(kakaoUser.getProfileImageUrl());
         log.info("[Auth] 유저 처리 완료: userId={}, isNew={}", user.getId(), isNew);
 
         // 4. JWT 발급

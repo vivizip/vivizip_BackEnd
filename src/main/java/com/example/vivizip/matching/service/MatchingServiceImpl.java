@@ -11,6 +11,7 @@ import com.example.vivizip.matching.dto.StudentOnboardingRequest;
 import com.example.vivizip.matching.dto.SupporterOnboardingRequest;
 import com.example.vivizip.matching.dto.TimeSlotRequest;
 import com.example.vivizip.matching.dto.TimeSlotResponse;
+import com.example.vivizip.matching.dto.UpdateTimeSlotsRequest;
 import com.example.vivizip.matching.entity.Match;
 import com.example.vivizip.matching.entity.MatchStatus;
 import com.example.vivizip.matching.entity.TimeSlot;
@@ -193,6 +194,20 @@ public class MatchingServiceImpl implements MatchingService {
         return timeSlotRepository.findByUserId(counterpartId).stream()
                 .map(TimeSlotResponse::from)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TimeSlotResponse> getTimeSlots(Long userId) {
+        return timeSlotRepository.findByUserId(userId).stream()
+                .map(TimeSlotResponse::from)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void updateTimeSlots(Long userId, UpdateTimeSlotsRequest request) {
+        replaceTimeSlots(userId, request.timeSlots());
     }
 
     // 신청자뿐 아니라 매칭된 상대(서포터즈/유학생) 모두에게 매칭 완료를 알린다.
