@@ -3,6 +3,8 @@ package com.example.vivizip.user.service;
 import com.example.vivizip.S3.service.S3Service;
 import com.example.vivizip.common.exception.ErrorStatus;
 import com.example.vivizip.common.exception.GeneralException;
+import com.example.vivizip.matching.entity.School;
+import com.example.vivizip.matching.repository.SchoolRepository;
 import com.example.vivizip.user.dto.UpdateLanguageRequest;
 import com.example.vivizip.user.dto.UpdateProfileRequest;
 import com.example.vivizip.user.dto.UserProfileResponse;
@@ -19,12 +21,14 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final SchoolRepository schoolRepository;
     private final S3Service s3Service;
 
     @Override
     @Transactional(readOnly = true)
     public UserProfileResponse getProfile(String email) {
-        return UserProfileResponse.from(findActiveUser(email));
+        User user = findActiveUser(email);
+        return UserProfileResponse.from(user, resolveSchoolName(user.getSchoolId()));
     }
 
     @Override
@@ -32,7 +36,7 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponse updateProfile(String email, UpdateProfileRequest request) {
         User user = findActiveUser(email);
         user.updateProfile(request.profileImage());
-        return UserProfileResponse.from(user);
+        return UserProfileResponse.from(user, resolveSchoolName(user.getSchoolId()));
     }
 
     @Override
@@ -40,13 +44,20 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponse updateLanguage(String email, UpdateLanguageRequest request) {
         User user = findActiveUser(email);
         user.updateLanguage(request.language());
-        return UserProfileResponse.from(user);
+        return UserProfileResponse.from(user, resolveSchoolName(user.getSchoolId()));
     }
 
     @Override
     @Transactional
     public void withdraw(String email) {
         findActiveUser(email).withdraw();
+    }
+
+    private String resolveSchoolName(Long schoolId) {
+        if (schoolId == null) {
+            return null;
+        }
+        return schoolRepository.findById(schoolId).map(School::getName).orElse(null);
     }
 
     private User findActiveUser(String email) {
