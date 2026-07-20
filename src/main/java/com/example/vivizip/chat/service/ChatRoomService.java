@@ -3,6 +3,7 @@ package com.example.vivizip.chat.service;
 import com.example.vivizip.S3.service.S3Service;
 import com.example.vivizip.chat.dto.ChatMessageResponse;
 import com.example.vivizip.chat.dto.ChatMessageSliceResponse;
+import com.example.vivizip.chat.dto.ChatReadEvent;
 import com.example.vivizip.chat.dto.ChatRoomResponse;
 import com.example.vivizip.chat.entity.ChatMessage;
 import com.example.vivizip.chat.entity.ChatRoom;
@@ -94,26 +95,31 @@ public class ChatRoomService {
                 .orElse(null);
     }
 
-    // 내 활성 방 목록
+    // 내 활성 방 목록 (안읽음 수 포함)
     @Transactional(readOnly = true)
     public List<ChatRoomResponse> getMyRooms(Long userId) {
         return chatRoomRepository.findAllByUserIdAndStatus(userId, ChatRoomStatus.ACTIVE).stream()
-                .map(ChatRoomResponse::from)
+                .map(room -> {
+                    Long myLastReadId = room.getSupporterId().equals(userId)
+                            ? room.getSupporterLastReadId()
+                            : room.getStudentLastReadId();
+                    long unreadCount = chatMessageRepository.countUnread(room.getId(), myLastReadId);
+                    return ChatRoomResponse.from(room, unreadCount);
+                })
                 .toList();
     }
 
-    // 이전 대화 페이징 (커서 기반)
-    @Transactional(readOnly = true)
+    // 이전 대화 페이징 (커서 기반) + 읽음 처리 + 읽음 이벤트 브로드캐스트
+    @Transactional
     public ChatMessageSliceResponse getMessages(Long userId, Long roomId, Long cursor, int size) {
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.CHAT_ROOM_NOT_FOUND));
 
-        // 이 방 참여자만 조회 가능
         if (!room.hasParticipant(userId)) {
             throw new GeneralException(ErrorStatus.CHAT_ACCESS_DENIED);
         }
 
-        PageRequest pageable = PageRequest.of(0, size + 1); // hasNext 판단 위해 +1
+        PageRequest pageable = PageRequest.of(0, size + 1);
         List<ChatMessage> found = (cursor == null)
                 ? chatMessageRepository.findRecentByRoomId(roomId, pageable)
                 : chatMessageRepository.findByRoomIdBeforeCursor(roomId, cursor, pageable);
@@ -121,10 +127,32 @@ public class ChatRoomService {
         boolean hasNext = found.size() > size;
         if (hasNext) found = found.subList(0, size);
 
-        // DB에선 최신순(id DESC)으로 왔으니, 화면 표시용으로 과거→현재로 뒤집음
+        // 읽음 처리: 이번 조회에서 받은 메시지 중 최신 id로 lastReadId 갱신
+        if (!found.isEmpty()) {
+            // found는 id DESC 정렬 → 첫 번째가 가장 최신
+            Long latestMessageId = found.get(0).getId();
+            Long previousLastReadId = room.getCounterpartLastReadId(
+                    room.getSupporterId().equals(userId) ? room.getStudentId() : room.getSupporterId());
+            // 내 lastReadId가 증가할 때만 갱신 + 브로드캐스트
+            Long myCurrentLastRead = room.getSupporterId().equals(userId)
+                    ? room.getSupporterLastReadId() : room.getStudentLastReadId();
+            if (myCurrentLastRead == null || latestMessageId > myCurrentLastRead) {
+                room.updateLastRead(userId, latestMessageId);
+                chatRoomRepository.save(room);
+                // 상대방에게 읽음 이벤트 브로드캐스트
+                messagingTemplate.convertAndSend(
+                        "/sub/chat/" + roomId, ChatReadEvent.of(userId, latestMessageId));
+            }
+        }
+
+        // 상대방의 lastReadId로 각 메시지의 isRead 계산
+        Long counterpartLastReadId = room.getCounterpartLastReadId(userId);
+
         List<ChatMessageResponse> messages = new ArrayList<>(
-                found.stream().map(ChatMessageResponse::from).toList());
-        Collections.reverse(messages);
+                found.stream()
+                        .map(m -> ChatMessageResponse.from(m, userId, counterpartLastReadId))
+                        .toList());
+        Collections.reverse(messages); // 과거→현재 순
 
         Long nextCursor = found.isEmpty() ? null : found.get(found.size() - 1).getId();
 
