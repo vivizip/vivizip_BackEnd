@@ -15,9 +15,10 @@ public record UserProfileResponse(
         Nationality nationality,
         Gender gender,
         Long schoolId,
+        String schoolName,
         Boolean schoolVerified
 ) {
-    public static UserProfileResponse from(User user) {
+    public static UserProfileResponse from(User user, String schoolName) {
         return new UserProfileResponse(
                 user.getId(),
                 user.getEmail(),
@@ -28,6 +29,7 @@ public record UserProfileResponse(
                 user.getNationality(),
                 user.getGender(),
                 user.getSchoolId(),
+                schoolName,
                 user.getSchoolVerified()
         );
     }
