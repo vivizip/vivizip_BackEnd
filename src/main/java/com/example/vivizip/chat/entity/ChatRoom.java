@@ -39,6 +39,13 @@ public class ChatRoom {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // 참여자별 마지막으로 읽은 메시지 ID (null = 한 번도 읽지 않음)
+    @Column(name = "supporter_last_read_id")
+    private Long supporterLastReadId;
+
+    @Column(name = "student_last_read_id")
+    private Long studentLastReadId;
+
     private ChatRoom(Long supporterId, Long studentId, Long matchId) {
         this.supporterId = supporterId;
         this.studentId = studentId;
@@ -66,5 +73,20 @@ public class ChatRoom {
 
     public void close() {
         this.status = ChatRoomStatus.CLOSED;
+    }
+
+    // 호출자의 마지막 읽은 메시지 ID 갱신
+    public void updateLastRead(Long userId, Long messageId) {
+        if (supporterId.equals(userId)) {
+            this.supporterLastReadId = messageId;
+        } else if (studentId.equals(userId)) {
+            this.studentLastReadId = messageId;
+        }
+    }
+
+    // 상대방의 마지막 읽은 메시지 ID 반환
+    public Long getCounterpartLastReadId(Long myUserId) {
+        if (supporterId.equals(myUserId)) return studentLastReadId;
+        return supporterLastReadId;
     }
 }
