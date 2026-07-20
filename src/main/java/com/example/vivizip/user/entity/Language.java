@@ -7,7 +7,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Language {
     KOREAN("한국어"),
-    ENGLISH("English");
+    ENGLISH("English"),
+    VIETNAMESE("Tiếng Việt"),
+    CHINESE("中文");
+
 
     private final String label;
 }
