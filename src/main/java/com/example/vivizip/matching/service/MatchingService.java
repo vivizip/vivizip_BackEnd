@@ -5,6 +5,10 @@ import com.example.vivizip.matching.dto.MatchStatusResponse;
 import com.example.vivizip.matching.dto.RematchRequest;
 import com.example.vivizip.matching.dto.StudentOnboardingRequest;
 import com.example.vivizip.matching.dto.SupporterOnboardingRequest;
+import com.example.vivizip.matching.dto.TimeSlotResponse;
+import com.example.vivizip.matching.dto.UpdateTimeSlotsRequest;
+
+import java.util.List;
 
 public interface MatchingService {
     void onboardSupporter(Long userId, SupporterOnboardingRequest request);
@@ -18,4 +22,8 @@ public interface MatchingService {
     MatchResponse rematch(Long userId, Long matchId, RematchRequest request);
 
     MatchStatusResponse getMatchStatus(Long userId);
+
+    List<TimeSlotResponse> getTimeSlots(Long userId);
+
+    void updateTimeSlots(Long userId, UpdateTimeSlotsRequest request);
 }

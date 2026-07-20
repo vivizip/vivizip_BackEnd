@@ -7,6 +7,8 @@ import com.example.vivizip.matching.dto.SchoolVerificationConfirmRequest;
 import com.example.vivizip.matching.dto.SchoolVerificationSendRequest;
 import com.example.vivizip.matching.dto.StudentOnboardingRequest;
 import com.example.vivizip.matching.dto.SupporterOnboardingRequest;
+import com.example.vivizip.matching.dto.TimeSlotResponse;
+import com.example.vivizip.matching.dto.UpdateTimeSlotsRequest;
 import com.example.vivizip.matching.service.MatchingService;
 import com.example.vivizip.matching.service.SchoolVerificationService;
 import com.example.vivizip.security.user.CustomUserDetails;
@@ -18,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import static com.example.vivizip.consts.StaticVariable.SWAGGER_JWT;
 
@@ -103,6 +107,22 @@ public class MatchController {
     public ResponseEntity<MatchResponse> getMatchResult(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(matchingService.getMatchResult(userDetails.getUserId()));
+    }
+
+    @Operation(summary = "내 활동 시간대 조회", description = "로그인한 사용자가 등록한 활동 가능 시간대 목록을 조회합니다. (마이페이지)")
+    @GetMapping("/time-slots")
+    public ResponseEntity<List<TimeSlotResponse>> getTimeSlots(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(matchingService.getTimeSlots(userDetails.getUserId()));
+    }
+
+    @Operation(summary = "내 활동 시간대 수정", description = "등록된 시간대를 요청 목록으로 전체 교체합니다. (마이페이지)")
+    @PutMapping("/time-slots")
+    public ResponseEntity<Void> updateTimeSlots(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid UpdateTimeSlotsRequest request) {
+        matchingService.updateTimeSlots(userDetails.getUserId(), request);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(
