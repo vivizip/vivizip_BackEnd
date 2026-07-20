@@ -54,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
                             .kakaoId(String.valueOf(kakaoUser.id()))
                             .email(kakaoUser.getEmail())
                             .name(kakaoUser.getName())
+                            .profileImage(kakaoUser.getProfileImageUrl())
                             .role(Role.STUDENT)
                             .build());
                 });
