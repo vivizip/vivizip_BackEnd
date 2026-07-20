@@ -1,6 +1,7 @@
 package com.example.vivizip.document.controller;
 
 import com.example.vivizip.document.dto.LeaseCaseCreateRequest;
+import com.example.vivizip.document.dto.LeaseCaseProgressResponse;
 import com.example.vivizip.document.dto.LeaseCaseResponse;
 import com.example.vivizip.document.dto.LeaseCaseSummaryResponse;
 import com.example.vivizip.document.service.LeaseCaseService;
@@ -44,6 +45,20 @@ public class LeaseCaseController {
     public List<LeaseCaseSummaryResponse> getMyLeaseCases(
             @AuthenticationPrincipal CustomUserDetails user) {
         return leaseCaseService.getMyLeaseCases(user.getUserId());
+    }
+
+    @Operation(
+            summary = "부메랑 진행 과정 조회",
+            description = "로그인한 사용자의 전체 진행 단계를 3단계 중 하나로 반환합니다.\n\n" +
+                    "- 1(메이트 매칭): 아직 서포터즈와 매칭되지 않음\n" +
+                    "- 2(집 구하는 중): 매칭은 됐지만, 등록한 임대차 케이스 중 계약서 검토까지 끝난 게 아직 없음\n" +
+                    "- 3(계약서 검토): 가장 최근 등록한 임대차 케이스의 계약서 검토(임대차계약서 분석)까지 끝남\n\n" +
+                    "케이스를 여러 개 등록했다면 가장 최근 생성된 것(삭제 제외) 하나만 기준으로 판단합니다."
+    )
+    @GetMapping("/progress")
+    public LeaseCaseProgressResponse getProgress(
+            @AuthenticationPrincipal CustomUserDetails user) {
+        return leaseCaseService.getProgress(user.getUserId());
     }
 
     @Operation(summary = "내 임대차 케이스 상세 조회")

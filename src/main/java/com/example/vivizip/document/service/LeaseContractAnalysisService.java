@@ -5,6 +5,7 @@ import com.example.vivizip.common.exception.GeneralException;
 import com.example.vivizip.document.dto.임대차계약서.*;
 import com.example.vivizip.document.dto.중개대상물.BoundingBox;
 import com.example.vivizip.document.dto.중개대상물.HighlightRegion;
+import com.example.vivizip.document.entity.LeaseCase;
 import com.example.vivizip.document.entity.ReferenceBaseline;
 import com.example.vivizip.document.pipeline.LeaseContractValuePipeline;
 import com.example.vivizip.document.pipeline.MismatchMessagePipeline;
@@ -47,7 +48,7 @@ public class LeaseContractAnalysisService {
         if (files == null || files.isEmpty()) {
             throw new GeneralException(ErrorStatus.DOCUMENT_FILE_EMPTY);
         }
-        leaseCaseRepository.findByIdAndUserId(leaseCaseId, userId)
+        LeaseCase leaseCase = leaseCaseRepository.findByIdAndUserId(leaseCaseId, userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.LEASE_CASE_NOT_FOUND));
 
         // 1. OCR 저장 (트랜잭션 밖에서 CLOVA 호출 후 저장)
@@ -137,6 +138,10 @@ public class LeaseContractAnalysisService {
                 depositMessage,
                 monthlyRentMessage,
                 costRegions);
+
+        // 9. 계약서 검토(부메랑 3단계) 완료 처리 — 여기까지 예외 없이 왔으면 이 케이스의 계약서 검토가 끝난 것으로 본다.
+        leaseCase.complete();
+        leaseCaseRepository.save(leaseCase);
 
         return new LeaseContractAnalysisResponse(basicInfo, cost, riskyClauses);
     }
