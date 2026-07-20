@@ -68,6 +68,9 @@
 - Swagger 기반 API 문서화
 
 ---
+## 📁 ERD
+<img width="3717" height="1918" alt="신한해커톤 최종 다이어그램" src="https://github.com/user-attachments/assets/cb74c702-d3e6-4caa-869e-b79f468e00d7" />
+
 
 ## 🧩 Project Architecture
 <img width="4122" height="2138" alt="image" src="https://github.com/user-attachments/assets/62531155-d720-4d9b-be0f-77f5ce81dc87" />
