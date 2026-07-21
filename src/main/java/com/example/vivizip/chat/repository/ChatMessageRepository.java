@@ -10,6 +10,10 @@ import java.util.List;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
+    // 채팅방의 가장 최신 메시지 1건
+    @Query("SELECT m FROM ChatMessage m WHERE m.roomId = :roomId ORDER BY m.id DESC LIMIT 1")
+    java.util.Optional<ChatMessage> findLatestByRoomId(@Param("roomId") Long roomId);
+
     // 최초 조회: 최신 메시지부터
     @Query("SELECT m FROM ChatMessage m WHERE m.roomId = :roomId ORDER BY m.id DESC")
     List<ChatMessage> findRecentByRoomId(@Param("roomId") Long roomId, Pageable pageable);

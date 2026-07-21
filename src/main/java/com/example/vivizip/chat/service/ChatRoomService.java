@@ -95,7 +95,7 @@ public class ChatRoomService {
                 .orElse(null);
     }
 
-    // 내 활성 방 목록 (안읽음 수 포함)
+    // 내 활성 방 목록 (안읽음 수 + 최근 메시지 포함)
     @Transactional(readOnly = true)
     public List<ChatRoomResponse> getMyRooms(Long userId) {
         return chatRoomRepository.findAllByUserIdAndStatus(userId, ChatRoomStatus.ACTIVE).stream()
@@ -104,7 +104,9 @@ public class ChatRoomService {
                             ? room.getSupporterLastReadId()
                             : room.getStudentLastReadId();
                     long unreadCount = chatMessageRepository.countUnread(room.getId(), myLastReadId);
-                    return ChatRoomResponse.from(room, unreadCount);
+                    return chatMessageRepository.findLatestByRoomId(room.getId())
+                            .map(last -> ChatRoomResponse.from(room, unreadCount, last.getContent(), last.getCreatedAt()))
+                            .orElse(ChatRoomResponse.from(room, unreadCount, null, null));
                 })
                 .toList();
     }
