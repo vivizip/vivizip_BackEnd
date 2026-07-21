@@ -7,7 +7,6 @@ import com.example.vivizip.common.exception.ErrorStatus;
 import com.example.vivizip.common.exception.GeneralException;
 import com.example.vivizip.security.jwt.dto.JwtToken;
 import com.example.vivizip.security.jwt.service.TokenService;
-import com.example.vivizip.user.entity.Role;
 import com.example.vivizip.user.entity.User;
 import com.example.vivizip.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,11 +49,11 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByKakaoId(String.valueOf(kakaoUser.id()))
                 .orElseGet(() -> {
                     log.info("[Auth] 신규 유저 등록: kakaoId={}", kakaoUser.id());
+                    // role은 온보딩(서포터즈/유학생) 시 결정된다. 가입 직후엔 null(미신청) 상태로 둔다.
                     return userRepository.save(User.builder()
                             .kakaoId(String.valueOf(kakaoUser.id()))
                             .email(kakaoUser.getEmail())
                             .name(kakaoUser.getName())
-                            .role(Role.STUDENT)
                             .build());
                 });
         // 기존 유저도 로그인 시마다 카카오 프로필 이미지를 최신화

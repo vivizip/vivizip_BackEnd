@@ -77,9 +77,13 @@ public class MatchController {
     @Operation(
             summary = "매칭 상태 조회",
             description = "로그인한 사용자의 매칭 진행 상태를 3단계로 반환합니다.\n\n" +
-                    "- `NOT_APPLIED`: 아직 온보딩(서포터즈/유학생 등록)을 하지 않음 — 신청 전\n" +
-                    "- `APPLIED_NOT_MATCHED`: 온보딩은 했지만 아직 MATCHED 상태 매칭이 없음 — 신청 후 매칭 전\n" +
-                    "- `MATCHED`: 현재 MATCHED 상태 매칭이 있음 — 매칭된 후"
+                    "- `NOT_APPLIED`: 신청 전. 온보딩(서포터즈/유학생 등록)을 아직 안 했거나, " +
+                    "유학생이 매칭 신청 자체를 한 적 없거나, 매칭이 취소된 후 재신청하지 않은 경우\n" +
+                    "- `APPLIED_NOT_MATCHED`: 신청 후 매칭 전(대기 중). 유학생은 매칭 신청(POST /api/matches)했지만 " +
+                    "후보가 없어 PENDING으로 대기 중인 경우, 서포터즈는 온보딩만으로 후보 풀에 들어가 아직 선택되지 않은 경우\n" +
+                    "- `MATCHED`: 매칭된 후. 현재 MATCHED 상태 매칭이 있음\n\n" +
+                    "유학생 기준으로는 매칭(matches) 레코드의 실제 상태(PENDING/MATCHED)를 직접 확인하며, " +
+                    "CANCELED만 있고 재신청하지 않았으면 NOT_APPLIED로 취급합니다."
     )
     @GetMapping("/status")
     public ResponseEntity<MatchStatusResponse> getMatchStatus(
@@ -90,6 +94,8 @@ public class MatchController {
     @Operation(
             summary = "매칭 신청",
             description = "로그인한 유학생이 같은 학교의 서포터즈 중 시간대가 겹치는 후보를 찾아 점수가 가장 높은 서포터즈와 매칭합니다.\n\n" +
+                    "후보가 없으면 매칭 신청 자체는 PENDING 상태로 남겨두고(매칭 상태 조회 시 대기 중으로 보임) " +
+                    "404(MATCH_CANDIDATE_NOT_FOUND)를 반환합니다. 이미 PENDING 상태로 대기 중이면 400(MATCH_ALREADY_PENDING)을 반환합니다.\n\n" +
                     COUNTERPART_KOREAN_LEVEL_NOTE
     )
     @PostMapping
