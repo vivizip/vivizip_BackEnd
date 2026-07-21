@@ -1,11 +1,16 @@
 package com.example.vivizip.document.service;
 
+import com.example.vivizip.S3.enums.S3Folder;
+import com.example.vivizip.S3.service.S3Service;
 import com.example.vivizip.common.exception.ErrorStatus;
 import com.example.vivizip.common.exception.GeneralException;
 import com.example.vivizip.document.dto.임대차계약서.*;
 import com.example.vivizip.document.dto.중개대상물.BoundingBox;
 import com.example.vivizip.document.dto.중개대상물.HighlightRegion;
+import com.example.vivizip.document.entity.AnalysisType;
 import com.example.vivizip.document.entity.LeaseCase;
+import com.example.vivizip.document.entity.LeaseDocument;
+import com.example.vivizip.document.entity.LeaseDocumentType;
 import com.example.vivizip.document.entity.ReferenceBaseline;
 import com.example.vivizip.document.pipeline.LeaseContractValuePipeline;
 import com.example.vivizip.document.pipeline.MismatchMessagePipeline;
@@ -15,6 +20,8 @@ import com.example.vivizip.document.repository.ReferenceBaselineRepository;
 import com.example.vivizip.ocr.dto.KeywordSearchResponse;
 import com.example.vivizip.ocr.dto.OcrSaveResponse;
 import com.example.vivizip.ocr.service.OcrService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,8 +36,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// 임대차계약서 분석: OCR → AI 값 추출 → 하이라이트 박스 → reference_baseline 비교 → 불일치 멘트 → 위험 특약 → 응답 조립.
-// 중개대상물과 동일하게 1회성 분석이며 DB에 분석 결과를 저장하지 않는다.
+// 임대차계약서 분석: 업로드(S3) → OCR → AI 값 추출 → 하이라이트 박스 → reference_baseline 비교 → 불일치 멘트 → 위험 특약 → 응답 조립.
+// 분석 상태·결과는 document_analysis 테이블에 저장한다.
 // reference_baseline은 읽기 전용으로만 사용한다 (업데이트 없음).
 @Slf4j
 @Service
@@ -43,11 +50,46 @@ public class LeaseContractAnalysisService {
     private final LeaseContractValuePipeline leaseContractValuePipeline;
     private final MismatchMessagePipeline mismatchMessagePipeline;
     private final RiskyClausePipeline riskyClausePipeline;
+    private final S3Service s3Service;
+    private final LeaseDocumentUploadRecorder leaseDocumentUploadRecorder;
+    private final DocumentAnalysisRecorder documentAnalysisRecorder;
+    private final ObjectMapper objectMapper;
 
     public LeaseContractAnalysisResponse analyze(Long userId, Long leaseCaseId, List<MultipartFile> files) throws IOException {
         if (files == null || files.isEmpty()) {
             throw new GeneralException(ErrorStatus.DOCUMENT_FILE_EMPTY);
         }
+        leaseCaseRepository.findByIdAndUserId(leaseCaseId, userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.LEASE_CASE_NOT_FOUND));
+
+        LeaseDocument document = uploadFiles(leaseCaseId, files);
+        Long analysisId = documentAnalysisRecorder.start(document.getId(), AnalysisType.LEASE_CONTRACT_ANALYSIS);
+
+        try {
+            LeaseContractAnalysisResponse result = doAnalyze(userId, leaseCaseId, files);
+            documentAnalysisRecorder.complete(document.getId(), analysisId, AnalysisType.LEASE_CONTRACT_ANALYSIS, null, toJson(result));
+            return result;
+        } catch (IOException | RuntimeException e) {
+            String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            documentAnalysisRecorder.fail(document.getId(), analysisId, reason);
+            throw e;
+        }
+    }
+
+    private LeaseDocument uploadFiles(Long leaseCaseId, List<MultipartFile> files) {
+        List<String> uploadedKeys = new ArrayList<>();
+        try {
+            for (MultipartFile file : files) {
+                uploadedKeys.add(s3Service.uploadPrivate(file, S3Folder.LEASE_DOCUMENT.getPath()));
+            }
+            return leaseDocumentUploadRecorder.saveUploadedDocument(leaseCaseId, LeaseDocumentType.LEASE_CONTRACT, uploadedKeys);
+        } catch (RuntimeException e) {
+            uploadedKeys.forEach(s3Service::delete);
+            throw e;
+        }
+    }
+
+    private LeaseContractAnalysisResponse doAnalyze(Long userId, Long leaseCaseId, List<MultipartFile> files) throws IOException {
         LeaseCase leaseCase = leaseCaseRepository.findByIdAndUserId(leaseCaseId, userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.LEASE_CASE_NOT_FOUND));
 
@@ -382,6 +424,14 @@ public class LeaseContractAnalysisService {
                 topLeft.x(), topLeft.y(),
                 bottomRight.x() - topLeft.x(), bottomRight.y() - topLeft.y());
         return Optional.of(new HighlightRegion(match.pageIndex(), box, label));
+    }
+
+    private String toJson(LeaseContractAnalysisResponse result) {
+        try {
+            return objectMapper.writeValueAsString(result);
+        } catch (JsonProcessingException e) {
+            throw new GeneralException(ErrorStatus._INTERNAL_SERVER_ERROR);
+        }
     }
 
     // --- 문자열 정규화 ---

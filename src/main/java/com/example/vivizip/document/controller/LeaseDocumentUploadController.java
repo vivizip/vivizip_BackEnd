@@ -118,7 +118,7 @@ public class LeaseDocumentUploadController {
             description = """
                     임대차계약서 이미지를 업로드하면 OCR과 AI 분석을 한 번에 실행해 결과를 반환합니다.
                     중개대상물 확인·설명서가 이미 등록되어 있으면 소유자·주소·보증금·월세 일치 여부를 함께 비교합니다.
-                    분석 결과는 DB에 저장하지 않는 1회성 응답입니다.
+                    분석 상태와 결과는 document_analysis 테이블에 저장됩니다.
 
                     **basicInfo 필드**
                     - `matchesBrokerageDocument`: 중개대상물과 소유자·주소가 모두 일치하면 true, 하나라도 다르면 false, 중개대상물 미등록이면 null

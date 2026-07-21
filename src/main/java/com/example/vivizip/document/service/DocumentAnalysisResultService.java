@@ -4,6 +4,10 @@ import com.example.vivizip.common.exception.ErrorStatus;
 import com.example.vivizip.common.exception.GeneralException;
 import com.example.vivizip.document.dto.BuildingLedgerAnalysisResponse;
 import com.example.vivizip.document.dto.BuildingLedgerAnalysisResult;
+import com.example.vivizip.document.dto.LeaseContractGetResponse;
+import com.example.vivizip.document.dto.임대차계약서.LeaseContractAnalysisResponse;
+import com.example.vivizip.document.dto.RegistryAnalysisGetResponse;
+import com.example.vivizip.document.dto.RegistryAnalysisResult;
 import com.example.vivizip.document.dto.중개대상물.BrokerageDocumentAnalysisResponse;
 import com.example.vivizip.document.entity.AnalysisStatus;
 import com.example.vivizip.document.entity.DocumentAnalysis;
@@ -46,6 +50,22 @@ public class DocumentAnalysisResultService {
             throw new GeneralException(ErrorStatus.DOCUMENT_ANALYSIS_RESULT_NOT_FOUND);
         }
         return readJson(analysis.getResultJson(), BrokerageDocumentAnalysisResponse.class);
+    }
+
+    public RegistryAnalysisGetResponse getRegistryResult(Long userId, Long leaseCaseId) {
+        DocumentAnalysis analysis = findByLeaseCase(userId, leaseCaseId, LeaseDocumentType.REGISTRY);
+        RegistryAnalysisResult result = analysis.getResultJson() == null
+                ? null
+                : readJson(analysis.getResultJson(), RegistryAnalysisResult.class);
+        return new RegistryAnalysisGetResponse(analysis.getId(), analysis.getStatus(), result, analysis.getFailureReason());
+    }
+
+    public LeaseContractGetResponse getLeaseContractResult(Long userId, Long leaseCaseId) {
+        DocumentAnalysis analysis = findByLeaseCase(userId, leaseCaseId, LeaseDocumentType.LEASE_CONTRACT);
+        LeaseContractAnalysisResponse result = analysis.getResultJson() == null
+                ? null
+                : readJson(analysis.getResultJson(), LeaseContractAnalysisResponse.class);
+        return new LeaseContractGetResponse(analysis.getId(), analysis.getStatus(), result, analysis.getFailureReason());
     }
 
     private DocumentAnalysis findByLeaseCase(Long userId, Long leaseCaseId, LeaseDocumentType documentType) {
