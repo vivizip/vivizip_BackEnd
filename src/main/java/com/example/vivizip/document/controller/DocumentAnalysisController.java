@@ -6,6 +6,7 @@ import com.example.vivizip.document.dto.BuildingLedgerAnalysisResponse;
 import com.example.vivizip.document.dto.BuildingLedgerAnalysisResult;
 import com.example.vivizip.document.dto.DocumentAnalysisRequest;
 import com.example.vivizip.document.dto.DocumentAnalysisResponse;
+import com.example.vivizip.document.dto.LeaseContractGetResponse;
 import com.example.vivizip.document.dto.중개대상물.BrokerageDocumentAnalysisResponse;
 import com.example.vivizip.document.pipeline.BuildingLedgerReviewPipeline;
 import com.example.vivizip.document.service.DocumentAnalysisResultService;
@@ -54,6 +55,18 @@ public class DocumentAnalysisController {
             @AuthenticationPrincipal CustomUserDetails user,
             @Parameter(description = "사용자가 등록한 주소 ID") @RequestParam Long leaseCaseId) {
         return documentAnalysisResultService.getBrokerageDocumentResult(user.getUserId(), leaseCaseId);
+    }
+
+    @Operation(
+            summary = "임대차계약서 분석 결과 조회",
+            description = "leaseCaseId로 등록된 임대차계약서 중 가장 최근 건의 분석 상태와 결과를 조회합니다. " +
+                    "본인의 임대차 케이스가 아니거나 등록된 임대차계약서/분석 결과가 없으면 예외가 발생합니다."
+    )
+    @GetMapping("/lease-contract/analysis")
+    public LeaseContractGetResponse getLeaseContractResult(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "사용자가 등록한 주소 ID") @RequestParam Long leaseCaseId) {
+        return documentAnalysisResultService.getLeaseContractResult(user.getUserId(), leaseCaseId);
     }
 
     @Operation(
