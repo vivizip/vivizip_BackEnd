@@ -1,6 +1,7 @@
 package com.example.vivizip.config;
 
 import com.example.vivizip.security.websocket.StompAuthInterceptor;
+import com.example.vivizip.security.websocket.WebSocketTokenHandshakeInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
@@ -16,11 +17,13 @@ import org.springframework.web.socket.config.annotation.*;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final StompAuthInterceptor stompAuthInterceptor;
+    private final WebSocketTokenHandshakeInterceptor webSocketTokenHandshakeInterceptor;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*"); // 테스트용 전체 허용
+                .setAllowedOriginPatterns("*")
+                .addInterceptors(webSocketTokenHandshakeInterceptor);
     }
 
     @Override
