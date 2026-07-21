@@ -25,6 +25,7 @@ class DocumentAnalysisRecorder {
     private final LeaseDocumentRepository leaseDocumentRepository;
     private final DocumentAnalysisRepository documentAnalysisRepository;
     private final ReferenceBaselineRepository referenceBaselineRepository;
+    private final ContractStageService contractStageService;
 
     @Transactional
     public Long start(Long documentId, AnalysisType analysisType) {
@@ -44,6 +45,7 @@ class DocumentAnalysisRecorder {
 
         LeaseDocument document = leaseDocumentRepository.getReferenceById(documentId);
         document.completeAnalysis();
+        contractStageService.refreshStage(document.getLeaseCaseId());
 
         return new DocumentAnalysisResponse(analysisId, analysisType, analysis.getStatus(), result, null);
     }
