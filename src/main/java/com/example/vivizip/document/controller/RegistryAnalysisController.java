@@ -1,7 +1,9 @@
 package com.example.vivizip.document.controller;
 
 import com.example.vivizip.document.dto.DocumentAnalysisRequest;
+import com.example.vivizip.document.dto.RegistryAnalysisGetResponse;
 import com.example.vivizip.document.dto.RegistryAnalysisResponse;
+import com.example.vivizip.document.service.DocumentAnalysisResultService;
 import com.example.vivizip.document.service.RegistryAnalysisService;
 import com.example.vivizip.security.user.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +22,19 @@ import org.springframework.web.bind.annotation.*;
 public class RegistryAnalysisController {
 
     private final RegistryAnalysisService registryAnalysisService;
+    private final DocumentAnalysisResultService documentAnalysisResultService;
+
+    @Operation(
+            summary = "등기부등본 분석 결과 조회",
+            description = "leaseCaseId로 등록된 등기부등본 중 가장 최근 건의 분석 상태와 결과를 조회합니다. " +
+                    "본인의 임대차 케이스가 아니거나 등록된 등기부등본/분석 결과가 없으면 예외가 발생합니다."
+    )
+    @GetMapping("/api/documents/registry/analysis")
+    public RegistryAnalysisGetResponse getRegistryResult(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "사용자가 등록한 주소 ID") @RequestParam Long leaseCaseId) {
+        return documentAnalysisResultService.getRegistryResult(user.getUserId(), leaseCaseId);
+    }
 
     @Operation(
             summary = "[테스트] 등기부등본 AI 분석 (텍스트 직접 입력)",
