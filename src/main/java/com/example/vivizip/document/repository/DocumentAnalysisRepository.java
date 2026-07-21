@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface DocumentAnalysisRepository extends JpaRepository<DocumentAnalysis, Long> {
     Optional<DocumentAnalysis> findFirstByDocumentIdOrderByIdDesc(Long documentId);
+
+    void deleteByDocumentId(Long documentId);
 }

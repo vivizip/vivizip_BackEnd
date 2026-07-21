@@ -13,4 +13,6 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     Optional<Match> findBySupporterIdAndStatus(Long supporterId, MatchStatus status);
 
     List<Match> findByStatus(MatchStatus status);
+
+    void deleteByStudentIdOrSupporterId(Long studentId, Long supporterId);
 }

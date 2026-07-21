@@ -10,5 +10,6 @@ public interface UserService {
     UserProfileResponse updateProfile(String email, UpdateProfileRequest request);
     UserProfileResponse updateLanguage(String email, UpdateLanguageRequest request);
     void withdraw(String email);
+    void hardDelete(Long userId);
     String updateProfileImage(Long userId, MultipartFile file);
 }

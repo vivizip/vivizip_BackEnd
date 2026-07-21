@@ -67,4 +67,18 @@ public class UserController {
         userService.withdraw(userDetails.getEmail());
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(
+            summary = "회원탈퇴(완전 삭제)",
+            description = "users row와 연관 데이터를 DB에서 완전히 삭제합니다. **되돌릴 수 없습니다.**\n\n" +
+                    "- 본인 소유 데이터(임대차 케이스·서류·분석 결과, 활동 시간대, 알림, FCM 토큰, OCR 결과, 입주 기록/사진)는 모두 삭제됩니다.\n" +
+                    "- 매칭·채팅방·채팅 메시지·약속은 상대방과 공유하는 데이터라도 함께 완전히 삭제됩니다(상대방 채팅 기록도 사라짐에 유의).\n" +
+                    "- 삭제 후 같은 카카오 계정으로 다시 로그인하면 완전히 새 계정으로 가입됩니다."
+    )
+    @DeleteMapping("/me/hard")
+    public ResponseEntity<Void> hardDeleteMyAccount(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        userService.hardDelete(userDetails.getUserId());
+        return ResponseEntity.noContent().build();
+    }
 }

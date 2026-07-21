@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -57,6 +58,41 @@ public class RedisService {
         } catch (Exception e) {
             log.error("Redis 삭제 실패: {}", e.getMessage());
             throw new RuntimeException("Redis 삭제 실패: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Set에 값 추가 (리프레시 토큰 → 유저 이메일 역인덱스 등)
+     */
+    public void addToSet(String key, String value) {
+        try {
+            redisTemplate.opsForSet().add(key, value);
+        } catch (Exception e) {
+            log.error("Redis Set 추가 실패: {}", e.getMessage());
+            throw new RuntimeException("Redis Set 추가 실패: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Set에서 값 제거
+     */
+    public void removeFromSet(String key, String value) {
+        try {
+            redisTemplate.opsForSet().remove(key, value);
+        } catch (Exception e) {
+            log.error("Redis Set 제거 실패: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Set의 전체 멤버 조회
+     */
+    public Set<String> getSetMembers(String key) {
+        try {
+            return redisTemplate.opsForSet().members(key);
+        } catch (Exception e) {
+            log.error("Redis Set 조회 실패: {}", e.getMessage());
+            return Set.of();
         }
     }
 

@@ -25,6 +25,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final SchoolRepository schoolRepository;
     private final S3Service s3Service;
+    private final UserHardDeleteService userHardDeleteService;
 
     @Override
     @Transactional(readOnly = true)
@@ -53,6 +54,12 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void withdraw(String email) {
         findActiveUser(email).withdraw();
+    }
+
+    // 소프트 삭제(withdraw)와 달리 users row 자체와 연관 데이터를 전부 지운다. 되돌릴 수 없다.
+    @Override
+    public void hardDelete(Long userId) {
+        userHardDeleteService.execute(userId);
     }
 
     private UserProfileResponse toProfileResponse(User user) {

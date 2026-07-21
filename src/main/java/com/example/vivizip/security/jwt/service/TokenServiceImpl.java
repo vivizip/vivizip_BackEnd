@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -60,6 +61,7 @@ public class TokenServiceImpl implements TokenService {
                 .compact();
 
         redisService.setValue(refreshToken, authentication.getName());
+        redisService.addToSet(refreshTokenSetKey(authentication.getName()), refreshToken);
 
         log.info("토큰 생성 완료: {}", authentication.getName());
 
@@ -79,10 +81,12 @@ public class TokenServiceImpl implements TokenService {
         }
         validateToken(refreshToken);
 
-        redisService.deleteValue(refreshToken);
-
         Claims claims = parseClaims(refreshToken);
         String username = claims.getSubject();
+
+        redisService.deleteValue(refreshToken);
+        redisService.removeFromSet(refreshTokenSetKey(username), refreshToken);
+
         var userDetails = customUserDetailsService.loadUserByUsername(username);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, "", userDetails.getAuthorities());
@@ -128,7 +132,9 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public boolean logout(String refreshToken) {
+        String username = parseClaims(refreshToken).getSubject();
         redisService.deleteValue(refreshToken);
+        redisService.removeFromSet(refreshTokenSetKey(username), refreshToken);
         log.info("로그아웃 완료");
         return true;
     }
@@ -136,6 +142,21 @@ public class TokenServiceImpl implements TokenService {
     @Override
     public boolean existsRefreshToken(String refreshToken) {
         return redisService.getValue(refreshToken) != null;
+    }
+
+    // 회원 탈퇴(하드 삭제) 시 해당 이메일로 발급된 모든 리프레시 토큰을 무효화한다.
+    @Override
+    public void revokeAllTokens(String email) {
+        String setKey = refreshTokenSetKey(email);
+        Set<String> tokens = redisService.getSetMembers(setKey);
+        if (tokens != null) {
+            tokens.forEach(redisService::deleteValue);
+        }
+        redisService.deleteValue(setKey);
+    }
+
+    private String refreshTokenSetKey(String email) {
+        return "refresh-tokens:" + email;
     }
 
     @Override
