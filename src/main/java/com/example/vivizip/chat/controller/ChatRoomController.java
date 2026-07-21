@@ -1,5 +1,6 @@
 package com.example.vivizip.chat.controller;
 
+import com.example.vivizip.chat.dto.ChatMessageRequest;
 import com.example.vivizip.chat.dto.ChatMessageResponse;
 import com.example.vivizip.chat.dto.ChatMessageSliceResponse;
 import com.example.vivizip.chat.dto.ChatRoomCreateRequest;
@@ -50,6 +51,24 @@ public class ChatRoomController {
             @Parameter(description = "마지막으로 받은 메시지 ID (첫 요청 시 생략)") @RequestParam(required = false) Long cursor,
             @Parameter(description = "한 번에 조회할 메시지 수 (기본값: 20)") @RequestParam(defaultValue = "20") int size) {
         return chatRoomService.getMessages(user.getUserId(), roomId, cursor, size);
+    }
+
+    @Operation(summary = "텍스트 메시지 전송 (폴링용)", description = "메시지를 저장하고 반환합니다. 상대방은 /messages/poll 로 폴링하여 수신합니다.")
+    @PostMapping("/rooms/{roomId}/messages")
+    public ChatMessageResponse sendMessage(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "채팅방 ID") @PathVariable Long roomId,
+            @org.springframework.web.bind.annotation.RequestBody ChatMessageRequest request) {
+        return chatRoomService.sendTextMessage(user.getUserId(), roomId, request.content());
+    }
+
+    @Operation(summary = "새 메시지 폴링", description = "afterId보다 큰 메시지를 반환하고 읽음 처리합니다. 첫 요청 시 초기 메시지는 /messages 에서 불러온 후, 마지막 messageId를 afterId로 넘겨 폴링하세요.")
+    @GetMapping("/rooms/{roomId}/messages/poll")
+    public List<ChatMessageResponse> pollMessages(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "채팅방 ID") @PathVariable Long roomId,
+            @Parameter(description = "마지막으로 받은 메시지 ID (이보다 큰 메시지만 반환)") @RequestParam(defaultValue = "0") Long afterId) {
+        return chatRoomService.pollNewMessages(user.getUserId(), roomId, afterId);
     }
 
     @Operation(
