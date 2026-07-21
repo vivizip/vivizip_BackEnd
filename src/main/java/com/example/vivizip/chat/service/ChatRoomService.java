@@ -159,6 +159,52 @@ public class ChatRoomService {
         return new ChatMessageSliceResponse(messages, nextCursor, hasNext);
     }
 
+    // 텍스트 메시지 전송 (REST 폴링용)
+    @Transactional
+    public ChatMessageResponse sendTextMessage(Long userId, Long roomId, String content) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.CHAT_ROOM_NOT_FOUND));
+        if (!room.hasParticipant(userId)) {
+            throw new GeneralException(ErrorStatus.CHAT_ACCESS_DENIED);
+        }
+
+        ChatMessageResponse response = chatMessagePersister.save(roomId, userId, content, MessageType.TEXT);
+
+        Long recipientId = room.getStudentId().equals(userId) ? room.getSupporterId() : room.getStudentId();
+        String senderName = userRepository.findById(userId).map(User::getName).orElse("");
+        notificationService.notifyChatMessage(recipientId, roomId, senderName, content);
+
+        return response;
+    }
+
+    // 새 메시지 폴링: afterId보다 큰 메시지 반환 + 읽음 처리
+    @Transactional
+    public List<ChatMessageResponse> pollNewMessages(Long userId, Long roomId, Long afterId) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.CHAT_ROOM_NOT_FOUND));
+        if (!room.hasParticipant(userId)) {
+            throw new GeneralException(ErrorStatus.CHAT_ACCESS_DENIED);
+        }
+
+        List<ChatMessage> found = chatMessageRepository.findByRoomIdAfterCursor(
+                roomId, afterId, PageRequest.of(0, 50));
+
+        if (!found.isEmpty()) {
+            Long latestId = found.get(found.size() - 1).getId();
+            Long myCurrentLastRead = room.getSupporterId().equals(userId)
+                    ? room.getSupporterLastReadId() : room.getStudentLastReadId();
+            if (myCurrentLastRead == null || latestId > myCurrentLastRead) {
+                room.updateLastRead(userId, latestId);
+                chatRoomRepository.save(room);
+            }
+        }
+
+        Long counterpartLastReadId = room.getCounterpartLastReadId(userId);
+        return found.stream()
+                .map(m -> ChatMessageResponse.from(m, userId, counterpartLastReadId))
+                .toList();
+    }
+
     // 채팅 이미지 업로드 → S3 저장 후 WebSocket 브로드캐스트
     // @Transactional 제거  (S3 업로드 동안 DB 커넥션 점유 방지)
     public ChatMessageResponse uploadImage(Long userId, Long roomId, MultipartFile file) {

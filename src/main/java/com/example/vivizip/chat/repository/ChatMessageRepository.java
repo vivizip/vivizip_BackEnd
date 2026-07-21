@@ -20,6 +20,12 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
                                                @Param("cursor") Long cursor,
                                                Pageable pageable);
 
+    // 폴링: afterId보다 id가 큰 새 메시지 (오래된 순)
+    @Query("SELECT m FROM ChatMessage m WHERE m.roomId = :roomId AND m.id > :afterId ORDER BY m.id ASC")
+    List<ChatMessage> findByRoomIdAfterCursor(@Param("roomId") Long roomId,
+                                              @Param("afterId") Long afterId,
+                                              Pageable pageable);
+
     // 안읽음 수: lastReadId 이후에 쌓인 메시지 수 (lastReadId가 null이면 전체)
     @Query("SELECT COUNT(m) FROM ChatMessage m WHERE m.roomId = :roomId AND (:lastReadId IS NULL OR m.id > :lastReadId)")
     long countUnread(@Param("roomId") Long roomId, @Param("lastReadId") Long lastReadId);
