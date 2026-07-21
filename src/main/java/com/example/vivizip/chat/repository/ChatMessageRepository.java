@@ -23,4 +23,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     // 안읽음 수: lastReadId 이후에 쌓인 메시지 수 (lastReadId가 null이면 전체)
     @Query("SELECT COUNT(m) FROM ChatMessage m WHERE m.roomId = :roomId AND (:lastReadId IS NULL OR m.id > :lastReadId)")
     long countUnread(@Param("roomId") Long roomId, @Param("lastReadId") Long lastReadId);
+
+    void deleteByRoomIdIn(List<Long> roomIds);
 }

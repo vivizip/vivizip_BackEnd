@@ -40,7 +40,14 @@ public class LeaseCaseController {
         return leaseCaseService.create(user.getUserId(), request);
     }
 
-    @Operation(summary = "내 임대차 케이스 목록 조회", description = "목록 화면에 필요한 leaseCaseId와 name을 최신순으로 반환합니다.")
+    @Operation(
+            summary = "내 임대차 케이스 목록 조회",
+            description = "목록 화면에 필요한 leaseCaseId, name, contractStage를 최신순으로 반환합니다.\n\n" +
+                    "contractStage(계약 진행 단계)는 서류 분석이 완료될 때마다 자동으로 갱신됩니다.\n" +
+                    "- 등기부등본과 건축물대장 분석이 모두 완료되면 DURING_CONTRACT(계약 중)\n" +
+                    "- 중개대상물 확인·설명서와 임대차계약서 분석이 모두 완료되면 AFTER_CONTRACT(계약 후)\n" +
+                    "- 한 번 올라간 단계는 재분석 등으로도 이전 단계로 내려가지 않습니다."
+    )
     @GetMapping
     public List<LeaseCaseSummaryResponse> getMyLeaseCases(
             @AuthenticationPrincipal CustomUserDetails user) {
@@ -61,7 +68,13 @@ public class LeaseCaseController {
         return leaseCaseService.getProgress(user.getUserId());
     }
 
-    @Operation(summary = "내 임대차 케이스 상세 조회")
+    @Operation(
+            summary = "내 임대차 케이스 상세 조회",
+            description = "응답의 contractStage(계약 진행 단계)는 서류 분석이 완료될 때마다 자동으로 갱신됩니다.\n\n" +
+                    "- 등기부등본과 건축물대장 분석이 모두 완료되면 DURING_CONTRACT(계약 중)\n" +
+                    "- 중개대상물 확인·설명서와 임대차계약서 분석이 모두 완료되면 AFTER_CONTRACT(계약 후)\n" +
+                    "- 한 번 올라간 단계는 재분석 등으로도 이전 단계로 내려가지 않습니다."
+    )
     @GetMapping("/{leaseCaseId}")
     public LeaseCaseResponse getMyLeaseCase(
             @AuthenticationPrincipal CustomUserDetails user,

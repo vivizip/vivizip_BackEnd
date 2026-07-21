@@ -21,4 +21,7 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             "AND r.status = :status " +
             "ORDER BY r.createdAt DESC")
     List<ChatRoom> findAllByUserIdAndStatus(@Param("userId") Long userId, @Param("status") ChatRoomStatus status);
+
+    // 회원 탈퇴(하드 삭제) 시 상태 무관 전체 방 조회용
+    List<ChatRoom> findAllBySupporterIdOrStudentId(Long supporterId, Long studentId);
 }

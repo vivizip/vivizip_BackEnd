@@ -46,6 +46,7 @@ public class MatchingServiceImpl implements MatchingService {
     private final MatchRepository matchRepository;
     private final ChatRoomService chatRoomService;
     private final NotificationService notificationService;
+    private final MatchPendingRecorder matchPendingRecorder;
 
     @Override
     @Transactional
@@ -90,12 +91,17 @@ public class MatchingServiceImpl implements MatchingService {
         if (matchRepository.findByStudentIdAndStatus(studentUserId, MatchStatus.MATCHED).isPresent()) {
             throw new GeneralException(ErrorStatus.MATCH_ALREADY_MATCHED);
         }
+        if (matchRepository.findByStudentIdAndStatus(studentUserId, MatchStatus.PENDING).isPresent()) {
+            throw new GeneralException(ErrorStatus.MATCH_ALREADY_PENDING);
+        }
         if (!timeSlotRepository.existsByUserId(studentUserId)) {
             throw new GeneralException(ErrorStatus.MATCH_TIME_SLOT_NOT_FOUND);
         }
 
         List<User> candidates = findMatchableSupporters(student, Set.of());
         if (candidates.isEmpty()) {
+            // 후보를 못 찾았어도 신청 자체는 PENDING으로 남겨, 상태 조회 시 "대기 중"으로 보이게 한다.
+            matchPendingRecorder.savePending(studentUserId);
             throw new GeneralException(ErrorStatus.MATCH_CANDIDATE_NOT_FOUND);
         }
 
@@ -123,6 +129,9 @@ public class MatchingServiceImpl implements MatchingService {
                 counterpartTimeSlots(student.getId(), supporter.getId(), userId));
     }
 
+    // Match 레코드의 실제 status를 기준으로 판단한다 (레코드 없음/CANCELED만 있음 -> NOT_APPLIED,
+    // PENDING -> APPLIED_NOT_MATCHED(대기 중), MATCHED -> MATCHED). "MATCHED가 없다"는 이유만으로
+    // 신청 전과 취소된 상태를 같은 값으로 뭉뚱그리지 않는다.
     @Override
     @Transactional(readOnly = true)
     public MatchStatusResponse getMatchStatus(Long userId) {
@@ -131,11 +140,20 @@ public class MatchingServiceImpl implements MatchingService {
             return MatchStatusResponse.of(MatchApplicationStatus.NOT_APPLIED);
         }
 
-        boolean matched = (user.getRole() == Role.STUDENT
-                ? matchRepository.findByStudentIdAndStatus(userId, MatchStatus.MATCHED)
-                : matchRepository.findBySupporterIdAndStatus(userId, MatchStatus.MATCHED))
-                .isPresent();
+        if (user.getRole() == Role.STUDENT) {
+            if (matchRepository.findByStudentIdAndStatus(userId, MatchStatus.MATCHED).isPresent()) {
+                return MatchStatusResponse.of(MatchApplicationStatus.MATCHED);
+            }
+            if (matchRepository.findByStudentIdAndStatus(userId, MatchStatus.PENDING).isPresent()) {
+                return MatchStatusResponse.of(MatchApplicationStatus.APPLIED_NOT_MATCHED);
+            }
+            // 신청한 적이 없거나, 있던 매칭이 취소되고 재신청하지 않은 상태 -> 신청 전과 동일하게 취급
+            return MatchStatusResponse.of(MatchApplicationStatus.NOT_APPLIED);
+        }
 
+        // 서포터즈는 applyMatch를 직접 호출하지 않아 PENDING 레코드가 생기지 않는다.
+        // 온보딩(role=SUPPORTER) 자체가 매칭 후보 풀 등록이므로 MATCHED 여부만으로 판단한다.
+        boolean matched = matchRepository.findBySupporterIdAndStatus(userId, MatchStatus.MATCHED).isPresent();
         return MatchStatusResponse.of(matched ? MatchApplicationStatus.MATCHED : MatchApplicationStatus.APPLIED_NOT_MATCHED);
     }
 

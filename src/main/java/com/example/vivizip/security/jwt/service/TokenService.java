@@ -13,4 +13,5 @@ public interface TokenService {
     boolean logout(String refreshToken);
     boolean existsRefreshToken(String refreshToken);
     Date parseExpiration(String token);
+    void revokeAllTokens(String email);
 }

@@ -83,6 +83,8 @@ public enum ErrorStatus implements BaseErrorCode{
     MATCH_STATUS_NOT_MATCHED(BAD_REQUEST, 4561, "이미 종료되었거나 취소된 매칭입니다."),
     @ExplainError("rematchCount가 3 이상인 사용자가 재매칭을 시도했습니다.")
     MATCH_REMATCH_LIMIT_EXCEEDED(BAD_REQUEST, 4562, "재매칭은 최대 3회까지 가능합니다."),
+    @ExplainError("이미 PENDING(대기 중) 상태의 매칭 신청이 있습니다.")
+    MATCH_ALREADY_PENDING(BAD_REQUEST, 4568, "이미 매칭 신청 후 대기 중입니다."),
     @ExplainError("school_email_domains에 등록되지 않은 도메인의 이메일로 인증을 요청했습니다.")
     SCHOOL_EMAIL_DOMAIN_NOT_SUPPORTED(BAD_REQUEST, 4563, "지원하지 않는 학교 이메일입니다."),
     @ExplainError("Redis에 인증 정보가 없거나 TTL이 만료되었습니다.")

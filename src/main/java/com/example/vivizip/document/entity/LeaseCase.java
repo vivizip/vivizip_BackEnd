@@ -32,6 +32,10 @@ public class LeaseCase extends BaseEntity {
     @Column(nullable = false, length = 30)
     private LeaseCaseStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "contract_stage", nullable = false, length = 30)
+    private ContractStage contractStage = ContractStage.BEFORE_CONTRACT;
+
     private LeaseCase(Long userId, String name, String roadAddress, String detailAddress) {
         this.userId = userId;
         this.name = name;
@@ -50,5 +54,12 @@ public class LeaseCase extends BaseEntity {
 
     public void delete() {
         this.status = LeaseCaseStatus.DELETED;
+    }
+
+    // 이미 더 앞선(높은) 단계로 가 있으면 무시 — 재분석 등으로 단계가 뒤로 내려가지 않도록 한다.
+    public void advanceContractStage(ContractStage newStage) {
+        if (newStage.ordinal() > this.contractStage.ordinal()) {
+            this.contractStage = newStage;
+        }
     }
 }

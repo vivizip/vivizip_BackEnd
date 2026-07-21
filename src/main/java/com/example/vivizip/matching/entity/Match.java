@@ -27,8 +27,8 @@ public class Match extends BaseEntity {
     @Column(name = "student_id", nullable = false)
     private Long studentId;
 
-    // 서포터즈 FK
-    @Column(name = "supporter_id", nullable = false)
+    // 서포터즈 FK. PENDING 상태(상대를 아직 못 찾음)일 때는 null.
+    @Column(name = "supporter_id")
     private Long supporterId;
 
     @Enumerated(EnumType.STRING)
@@ -47,6 +47,13 @@ public class Match extends BaseEntity {
                 .studentId(studentId)
                 .supporterId(supporterId)
                 .status(MatchStatus.MATCHED)
+                .build();
+    }
+
+    public static Match createPending(Long studentId) {
+        return Match.builder()
+                .studentId(studentId)
+                .status(MatchStatus.PENDING)
                 .build();
     }
 

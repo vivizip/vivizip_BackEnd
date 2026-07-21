@@ -50,10 +50,14 @@ public class LeaseContractAnalysisService {
     private final LeaseContractValuePipeline leaseContractValuePipeline;
     private final MismatchMessagePipeline mismatchMessagePipeline;
     private final RiskyClausePipeline riskyClausePipeline;
+
+    private final ContractStageService contractStageService;
+
     private final S3Service s3Service;
     private final LeaseDocumentUploadRecorder leaseDocumentUploadRecorder;
     private final DocumentAnalysisRecorder documentAnalysisRecorder;
     private final ObjectMapper objectMapper;
+
 
     public LeaseContractAnalysisResponse analyze(Long userId, Long leaseCaseId, List<MultipartFile> files) throws IOException {
         if (files == null || files.isEmpty()) {
@@ -184,6 +188,7 @@ public class LeaseContractAnalysisService {
         // 9. 계약서 검토(부메랑 3단계) 완료 처리 — 여기까지 예외 없이 왔으면 이 케이스의 계약서 검토가 끝난 것으로 본다.
         leaseCase.complete();
         leaseCaseRepository.save(leaseCase);
+        contractStageService.refreshStage(leaseCase.getId());
 
         return new LeaseContractAnalysisResponse(basicInfo, cost, riskyClauses);
     }
