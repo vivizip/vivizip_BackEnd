@@ -1,9 +1,14 @@
 package com.example.vivizip.document.controller;
 
+import com.example.vivizip.common.exception.ErrorStatus;
+import com.example.vivizip.common.exception.GeneralException;
+import com.example.vivizip.document.dto.BuildingLedgerAnalysisResponse;
 import com.example.vivizip.document.dto.BuildingLedgerAnalysisResult;
 import com.example.vivizip.document.dto.DocumentAnalysisRequest;
 import com.example.vivizip.document.dto.DocumentAnalysisResponse;
+import com.example.vivizip.document.dto.중개대상물.BrokerageDocumentAnalysisResponse;
 import com.example.vivizip.document.pipeline.BuildingLedgerReviewPipeline;
+import com.example.vivizip.document.service.DocumentAnalysisResultService;
 import com.example.vivizip.document.service.DocumentAnalysisService;
 import com.example.vivizip.security.user.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +27,34 @@ import org.springframework.web.bind.annotation.*;
 public class DocumentAnalysisController {
 
     private final DocumentAnalysisService documentAnalysisService;
+    private final DocumentAnalysisResultService documentAnalysisResultService;
     private final BuildingLedgerReviewPipeline buildingLedgerReviewPipeline;
+
+    @Operation(
+            summary = "건축물대장 분석 결과 조회",
+            description = "leaseCaseId로 등록된 건축물대장 중 가장 최근 건의 분석 상태와 결과를 조회합니다. " +
+                    "응답 형식은 업로드+분석 API(`/building-ledger/upload-analyze`)와 동일합니다. " +
+                    "본인의 임대차 케이스가 아니거나 등록된 건축물대장/분석 결과가 없으면 예외가 발생합니다."
+    )
+    @GetMapping("/building-ledger/analysis")
+    public BuildingLedgerAnalysisResponse getBuildingLedgerResult(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "사용자가 등록한 주소 ID") @RequestParam Long leaseCaseId) {
+        return documentAnalysisResultService.getBuildingLedgerResult(user.getUserId(), leaseCaseId);
+    }
+
+    @Operation(
+            summary = "중개대상물 확인·설명서 분석 결과 조회",
+            description = "leaseCaseId로 등록된 중개대상물 확인·설명서 중 가장 최근 건의 분석 결과를 조회합니다. " +
+                    "응답 형식은 업로드+분석 API(`/brokerage-document/upload-analyze`)와 동일합니다. " +
+                    "본인의 임대차 케이스가 아니거나, 분석이 아직 완료되지 않았거나 결과가 없으면 예외가 발생합니다."
+    )
+    @GetMapping("/brokerage-document/analysis")
+    public BrokerageDocumentAnalysisResponse getBrokerageDocumentResult(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "사용자가 등록한 주소 ID") @RequestParam Long leaseCaseId) {
+        return documentAnalysisResultService.getBrokerageDocumentResult(user.getUserId(), leaseCaseId);
+    }
 
     @Operation(
             summary = "[테스트] 서류 AI 분석 요청",
