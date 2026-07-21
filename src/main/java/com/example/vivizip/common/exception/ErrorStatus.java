@@ -153,6 +153,8 @@ public enum ErrorStatus implements BaseErrorCode{
     LEASE_CASE_NOT_FOUND(NOT_FOUND, 4604, "임대차 케이스를 찾을 수 없습니다."),
     @ExplainError("업로드할 파일이 1개도 없습니다.")
     DOCUMENT_FILE_EMPTY(BAD_REQUEST, 4605, "업로드할 파일이 없습니다."),
+    @ExplainError("조회하려는 서류의 분석이 아직 완료되지 않았거나 결과가 없습니다.")
+    DOCUMENT_ANALYSIS_RESULT_NOT_FOUND(NOT_FOUND, 4606, "분석 결과가 없습니다. 분석이 완료된 후 다시 조회해주세요."),
 
     // juso (4750~4799)
     @ExplainError("juso(도로명주소) API 호출에 실패했거나 errorCode가 0이 아닙니다.")
