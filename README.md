@@ -4,6 +4,28 @@
 > VIVIZIP Backend는 Spring Boot 기반 API 서버와 CLOVA OCR + OpenAI 기반 문서 분석 파이프라인으로 구성됩니다.
 
 ---
+
+## 📖 Project Presentation
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/f1ec5387-cf72-4f10-92bf-b9895827f194" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/57eaf8fc-fecb-4a07-97f4-a43741785470" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/5c131101-bc7c-428e-b3e2-2a8e13fc24fa" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/c9fdf2b3-fb1d-43a7-942b-9e96fdecbff0" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/a306ea4e-502f-4261-a521-6820b8f85b9d" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/2d0970ab-720f-4acd-9053-44a2f58941a3" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/de474080-f7cb-44fa-b38d-fedb8a7c53f6" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/f1428e2e-7a1b-4fee-ac4d-0374d3f70c9d" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/1bff51ca-db71-454b-8a7e-2fa71d85da49" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/7b2f1a10-a17d-43db-8d9b-4e1fe139588c" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/26558f84-fc37-4651-a357-a43d7f5b15d8" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/99f2daf5-9f58-484a-8f35-5b1ba2e54f55" />
+<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/e4350671-78db-4f73-8ab5-2af510a7aeda" />
+
+
+
+## 🎥 Demo Video
+- [서비스 시연 영상](https://www.youtube.com/shorts/xYfBr1QI3ik)
+
+----
 ## 📌 Backend Developers
 <table>
   <tr>
