@@ -23,7 +23,7 @@
 
 
 ## 🎥 Demo Video
-- [서비스 시연 영상](https://www.youtube.com/shorts/xYfBr1QI3ik)
+- [서비스 시연 영상](https://www.youtube.com/shorts/WxynvALhA4s)
 
 ----
 ## 📌 Backend Developers
